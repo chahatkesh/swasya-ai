@@ -5,6 +5,7 @@ Features: Queue Management, Groq Whisper, Gemini Vision, Organized Architecture
 """
 
 from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import patients, queue, uploads, notes, documents
 from app.services.storage_service import storage
