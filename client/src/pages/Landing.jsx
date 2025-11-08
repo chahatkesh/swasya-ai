@@ -6,6 +6,7 @@ import {
   CoreFeatures, 
   ImpactMetrics, 
   FAQ, 
+  MobileAppCTA,
   Footer 
 } from '../components/landing'
 
@@ -18,6 +19,7 @@ const Landing = () => {
       <HowItWorks />
       <CoreFeatures />
       <FAQ />
+      <MobileAppCTA />
       <Footer />
     </div>
   )
