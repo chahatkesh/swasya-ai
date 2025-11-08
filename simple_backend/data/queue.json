@@ -8,7 +8,7 @@
     "status": "completed",
     "added_at": "2025-11-08T16:17:46.692931",
     "started_at": "2025-11-08T16:18:12.846121",
-    "completed_at": "2025-11-08T16:22:08.531451"
+    "completed_at": "2025-11-08T19:00:21.268252"
   },
   {
     "queue_id": "Q_13676B48",
@@ -20,5 +20,51 @@
     "added_at": "2025-11-08T16:41:57.273875",
     "started_at": "2025-11-08T16:42:21.584717",
     "completed_at": "2025-11-08T18:28:09.345254"
+  },
+  {
+    "queue_id": "Q_9788799E",
+    "patient_id": "PAT_1356A735",
+    "patient_name": "Rishi Ahuja",
+    "token_number": 1,
+    "priority": "normal",
+    "status": "completed",
+    "added_at": "2025-11-08T18:38:34.271418",
+    "started_at": "2025-11-08T18:38:57.200862",
+    "completed_at": "2025-11-08T18:39:05.311139"
+  },
+  {
+    "queue_id": "Q_7790304F",
+    "patient_id": "PAT_1FE660EB",
+    "patient_name": "rishi",
+    "token_number": 1,
+    "priority": "normal",
+    "status": "in_progress",
+    "added_at": "2025-11-08T18:42:40.585828",
+    "started_at": "2025-11-08T18:43:00.093189",
+    "completed_at": null
+  },
+  {
+    "queue_id": "Q_60C46C60",
+    "patient_id": "PAT_CCC7966E",
+    "patient_name": "chahat",
+    "token_number": 2,
+    "priority": "normal",
+    "status": "in_consultation",
+    "added_at": "2025-11-08T18:42:52.071096",
+    "started_at": "2025-11-08T19:02:29.315886",
+    "completed_at": null
+  },
+  {
+    "queue_id": "Q_722CC780",
+    "patient_id": "PAT_31A6F86D",
+    "patient_name": "Rishi Ahuja",
+    "token_number": 3,
+    "priority": "normal",
+    "status": "waiting",
+    "added_at": "2025-11-08T19:12:05.893870",
+    "started_at": null,
+    "completed_at": null,
+    "nurse_completed_at": null,
+    "timeline_ready_at": null
   }
 ]

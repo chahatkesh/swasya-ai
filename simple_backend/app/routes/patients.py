@@ -6,7 +6,8 @@ from fastapi import APIRouter, HTTPException
 from app.models.schemas import (
     PatientCreate, 
     PatientResponse, 
-    SuccessResponse
+    SuccessResponse,
+    QueueStatus
 )
 from app.services.storage_service import storage
 import uuid
@@ -113,11 +114,36 @@ def register_patient(patient: PatientCreate):
     
     print(f"✅ Registered: {patient_id} - UHID: {patient.uhid} - {patient.name}")
     
+    # NEW: Auto-add to queue
+    queue_id = f"Q_{uuid.uuid4().hex[:8].upper()}"
+    queue = storage.get_queue()
+    active_queue = [q for q in queue if q['status'] != 'completed']
+    token_number = len(active_queue) + 1
+    
+    queue_entry = {
+        "queue_id": queue_id,
+        "patient_id": patient_id,
+        "patient_name": patient.name,
+        "token_number": token_number,
+        "priority": "normal",
+        "status": QueueStatus.WAITING,
+        "added_at": datetime.now().isoformat(),
+        "started_at": None,
+        "completed_at": None,
+        "nurse_completed_at": None,
+        "timeline_ready_at": None
+    }
+    
+    storage.add_to_queue(queue_entry)
+    
+    print(f"✅ Added to queue: Token #{token_number} - {patient.name}")
+    
     return {
         "success": True,
         "patient_id": patient_id,
+        "queue_id": queue_id,  # NEW: Return queue_id for nurse app
         "uhid": patient.uhid,
-        "message": f"Patient {patient.name} registered successfully"
+        "message": f"Patient {patient.name} registered and added to queue"
     }
 
 

@@ -10,10 +10,12 @@ from datetime import datetime
 
 class QueueStatus(str, Enum):
     """Queue status options"""
-    WAITING = "waiting"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+    WAITING = "waiting"                    # Patient registered, nurse hasn't started work
+    NURSE_COMPLETED = "nurse_completed"    # Nurse finished, timeline generating
+    READY_FOR_DOCTOR = "ready_for_doctor"  # Timeline ready, waiting for doctor
+    IN_CONSULTATION = "in_consultation"    # Doctor actively reviewing patient
+    COMPLETED = "completed"                # Consultation finished
+    CANCELLED = "cancelled"                # Queue entry cancelled
 
 
 class Priority(str, Enum):

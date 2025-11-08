@@ -17,8 +17,10 @@ def get_queue():
     Get current queue status
     
     Shows all patients in queue with their status:
-    - waiting: In waiting room
-    - in_progress: Currently with doctor
+    - waiting: Patient registered, nurse hasn't started
+    - nurse_completed: Nurse finished, timeline generating
+    - ready_for_doctor: Timeline ready, waiting for doctor
+    - in_consultation: Currently with doctor
     - completed: Consultation finished
     """
     
@@ -27,7 +29,9 @@ def get_queue():
     # Calculate statistics
     stats = {
         "waiting": len([q for q in queue if q['status'] == 'waiting']),
-        "in_progress": len([q for q in queue if q['status'] == 'in_progress']),
+        "nurse_completed": len([q for q in queue if q['status'] == 'nurse_completed']),
+        "ready_for_doctor": len([q for q in queue if q['status'] == 'ready_for_doctor']),
+        "in_consultation": len([q for q in queue if q['status'] == 'in_consultation']),
         "completed": len([q for q in queue if q['status'] == 'completed']),
         "total": len(queue)
     }
@@ -141,23 +145,57 @@ def get_current_patient():
     
     Useful for doctor's dashboard
     """
-    in_progress = storage.get_queue_by_status(QueueStatus.IN_PROGRESS)
+    in_consultation = storage.get_queue_by_status(QueueStatus.IN_CONSULTATION)
     
-    if not in_progress:
+    if not in_consultation:
         return {
             "success": True,
             "message": "No patient currently in consultation",
             "patient": None
         }
     
-    # Should only be one in_progress at a time
-    current = in_progress[0]
+    # Should only be one in_consultation at a time
+    current = in_consultation[0]
     patient = storage.get_patient(current['patient_id'])
     
     return {
         "success": True,
         "queue_entry": current,
         "patient": patient
+    }
+
+
+@router.post("/{queue_id}/nurse-complete", response_model=dict)
+def nurse_complete_patient(queue_id: str):
+    """
+    Nurse marks patient as completed (timeline will be generated)
+    
+    **Path Parameters:**
+    - queue_id: Queue entry identifier
+    
+    Changes status from 'waiting' → 'nurse_completed'
+    
+    **Usage:**
+    Nurse clicks "Send to Doctor" button after recording audio/scanning documents.
+    Timeline generation will start automatically, and status will update to 
+    'ready_for_doctor' when complete.
+    """
+    
+    updated = storage.update_queue_status(
+        queue_id,
+        QueueStatus.NURSE_COMPLETED,
+        nurse_completed_at=datetime.now().isoformat()
+    )
+    
+    if not updated:
+        raise HTTPException(status_code=404, detail="Queue entry not found")
+    
+    print(f"✅ Nurse completed: {updated['patient_name']}")
+    
+    return {
+        "success": True,
+        "message": "Patient ready for timeline generation",
+        "queue_entry": updated
     }
 
 
@@ -169,21 +207,21 @@ def start_consultation(queue_id: str):
     **Path Parameters:**
     - queue_id: Queue entry identifier
     
-    Changes status from 'waiting' -> 'in_progress'
+    Changes status from 'ready_for_doctor' -> 'in_consultation'
     """
     
     # Check if another consultation is in progress
-    in_progress = storage.get_queue_by_status(QueueStatus.IN_PROGRESS)
-    if in_progress:
+    in_consultation = storage.get_queue_by_status(QueueStatus.IN_CONSULTATION)
+    if in_consultation:
         raise HTTPException(
             status_code=400, 
-            detail=f"Another patient ({in_progress[0]['patient_name']}) is already in consultation"
+            detail=f"Another patient ({in_consultation[0]['patient_name']}) is already in consultation"
         )
     
     # Update status
     updated = storage.update_queue_status(
         queue_id, 
-        QueueStatus.IN_PROGRESS,
+        QueueStatus.IN_CONSULTATION,
         started_at=datetime.now().isoformat()
     )
     
