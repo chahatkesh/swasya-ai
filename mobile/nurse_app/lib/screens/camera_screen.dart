@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../core/core.dart';
 import '../services/upload_queue_manager.dart';
 
 class CameraScreen extends StatefulWidget {
@@ -121,10 +122,9 @@ class _CameraScreenState extends State<CameraScreen> {
     final imagePath = _imageFile!.path;
     final imageFileName = imagePath.split('/').last;
     
-    print('📤 [CameraScreen] Adding image to upload queue...');
+    print('📤 [CameraScreen] Auto-queuing image for upload...');
     print('   Image file: $imageFileName');
     print('   Batch ID: $_batchId');
-    print('   Current document count: $_documentCount');
     
     try {
       final file = File(imagePath);
@@ -134,55 +134,49 @@ class _CameraScreenState extends State<CameraScreen> {
         throw Exception('Image file not found');
       }
       
-      final fileSize = await file.length();
-      print('   File size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
-      
-      // Add to queue - this is NON-BLOCKING!
+      // Add to queue automatically
       final taskId = _queueManager.addToQueue(
         patientId: widget.patientId,
         batchId: _batchId!,
         file: file,
       );
 
-      print('✅ [CameraScreen] Added to queue with task ID: $taskId');
-      print('   Queue now has ${_queueManager.queue.length} tasks');
+      print('✅ [CameraScreen] Auto-queued with task ID: $taskId');
 
       setState(() {
         _documentCount++;
-        _imageFile = null; // Clear immediately for next scan
-        _isUploading = false; // Re-enable upload button
+        _imageFile = null; // Clear for next scan
+        _isUploading = false;
       });
-
-      print('📊 [CameraScreen] Document count incremented to: $_documentCount');
 
       if (!mounted) return;
 
+      // Show brief success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.cloud_queue, color: Colors.white),
-              SizedBox(width: 8),
-              Expanded(child: Text('Document $_documentCount queued for upload')),
-            ],
+          content: Text('Document $_documentCount queued ✓'),
+          backgroundColor: AppColors.success,
+          duration: const Duration(milliseconds: 1500),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(
+            bottom: MediaQuery.of(context).size.height - 150,
+            left: 20,
+            right: 20,
           ),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
         ),
       );
       
-      print('🎯 [CameraScreen] UI cleared, ready for next document');
+      print('🎯 [CameraScreen] Ready for next document');
     } catch (e) {
-      print('❌ [CameraScreen] Failed to add to queue: $e');
+      print('❌ [CameraScreen] Failed to queue: $e');
       setState(() {
-        _isUploading = false; // Re-enable on error
+        _isUploading = false;
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to queue upload: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
+          content: Text('Failed to queue: $e'),
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -288,340 +282,429 @@ class _CameraScreenState extends State<CameraScreen> {
     );
   }
 
-  Widget _buildStat(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12)),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final batch = _batchId != null ? _queueManager.getBatch(_batchId!) : null;
     final isUploading = _queueManager.isProcessing;
-    final isPaused = _queueManager.isPaused;
     final totalUploaded = batch?.completedTasks ?? 0;
-    final totalFailed = batch?.failedTasks ?? 0;
     final totalPending = batch?.pendingTasks ?? 0;
-    final overallProgress = batch?.overallProgress ?? 0.0;
     
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Scan Document - ${widget.patientName}'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        actions: [
-          // Pause/Resume button
-          if (_documentCount > 0 && (isUploading || isPaused))
-            IconButton(
-              icon: Icon(
-                isPaused ? Icons.play_arrow : Icons.pause,
-                color: Colors.white,
-              ),
-              onPressed: () {
-                if (isPaused) {
-                  print('▶️ [CameraScreen] Resume uploads');
-                  _queueManager.resumeQueue();
-                } else {
-                  print('⏸️ [CameraScreen] Pause uploads');
-                  _queueManager.pauseQueue();
-                }
-              },
-              tooltip: isPaused ? 'Resume' : 'Pause',
-            ),
-        ],
+        backgroundColor: AppColors.secondary,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'AI Digitizer',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Patient Info
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.person, size: 48, color: Colors.blue),
-                      const SizedBox(height: 8),
-                      Text(
-                        widget.patientName,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'ID: ${widget.patientId}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      if (_batchId != null) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.green[100],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            'Documents Scanned: $_documentCount',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ),
-                        // Upload status indicator
-                        if (_documentCount > 0) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isUploading 
-                                  ? Colors.blue[50]
-                                  : isPaused
-                                      ? Colors.orange[50]
-                                      : Colors.green[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isUploading 
-                                    ? Colors.blue
-                                    : isPaused
-                                        ? Colors.orange
-                                        : Colors.green,
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      isUploading
-                                          ? Icons.cloud_upload
-                                          : isPaused
-                                              ? Icons.pause_circle
-                                              : Icons.check_circle,
-                                      size: 16,
-                                      color: isUploading 
-                                          ? Colors.blue
-                                          : isPaused
-                                              ? Colors.orange
-                                              : Colors.green,
-                                    ),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      isUploading
-                                          ? 'Uploading...'
-                                          : isPaused
-                                              ? 'Paused'
-                                              : 'All uploads complete',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: isUploading 
-                                            ? Colors.blue[900]
-                                            : isPaused
-                                                ? Colors.orange[900]
-                                                : Colors.green[900],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 6),
-                                Text(
-                                  '✓ $totalUploaded | ⏳ $totalPending${totalFailed > 0 ? ' | ✗ $totalFailed' : ''}',
-                                  style: TextStyle(fontSize: 10, color: Colors.grey[700]),
-                                ),
-                                if (overallProgress > 0 && overallProgress < 1) ...[
-                                  SizedBox(height: 6),
-                                  LinearProgressIndicator(
-                                    value: overallProgress,
-                                    backgroundColor: Colors.grey[300],
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      isUploading ? Colors.blue : Colors.green,
-                                    ),
-                                    minHeight: 3,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ],
-                  ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Patient header
+            Container(
+              margin: EdgeInsets.all(AppSpacing.lg),
+              padding: EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.secondary,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(0.15),
+                  width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
-              
-              // Image preview or placeholder
-              if (_imageFile != null)
-                Container(
-                  height: 300,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(_imageFile!.path),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  height: 300,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.document_scanner, size: 80, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'No image captured',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              
-              const SizedBox(height: 32),
-              
-              // Main Action Buttons
-              Row(
+              child: Row(
                 children: [
-                  // Camera Button
-                  Expanded(
-                    flex: 2,
-                    child: SizedBox(
-                      height: 56,
-                      child: ElevatedButton.icon(
-                        onPressed: _imageFile == null ? _takePicture : _uploadImage,
-                        icon: Icon(_imageFile == null ? Icons.camera_alt : Icons.cloud_queue),
-                        label: Text(
-                          _imageFile == null ? 'Scan Document' : 'Queue Upload',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _imageFile == null ? Colors.blue : Colors.green,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.person_outline,
+                      color: AppColors.primary,
+                      size: 24,
                     ),
                   ),
-                  
-                  // Done Button - ALWAYS VISIBLE
-                  const SizedBox(width: 12),
+                  SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: ElevatedButton.icon(
-                        onPressed: _isCompletingBatch 
-                            ? null 
-                            : (_documentCount > 0 ? _completeScanning : null),
-                        icon: _isCompletingBatch
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.check_circle, size: 20),
-                        label: Text(
-                          _isCompletingBatch ? 'Processing...' : 'Done',
-                          style: const TextStyle(fontSize: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.patientName,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey[300],
+                        SizedBox(height: AppSpacing.xs - 2),
+                        Text(
+                          'Document Scanning Session',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AppColors.accent, AppColors.accent.withOpacity(0.8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$_documentCount',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.secondary,
                       ),
                     ),
                   ),
                 ],
               ),
-              
-              const SizedBox(height: 16),
-              
-              // Helper text
-              if (_documentCount == 0)
+            ),
+            
+            // Upload status (if any documents)
+            if (_documentCount > 0) ...[
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                padding: EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: isUploading
+                      ? AppColors.info.withOpacity(0.08)
+                      : AppColors.success.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isUploading
+                        ? AppColors.info.withOpacity(0.3)
+                        : AppColors.success.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isUploading ? Icons.cloud_upload : Icons.check_circle,
+                      color: isUploading ? AppColors.info : AppColors.success,
+                      size: 20,
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isUploading ? 'Uploading documents...' : 'All uploads complete',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isUploading ? AppColors.info : AppColors.success,
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.xs - 2),
+                          Text(
+                            '✓ $totalUploaded uploaded • ⏳ $totalPending pending',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: AppSpacing.lg),
+            ],
+            
+            Expanded(
+              child: Center(
+                child: _imageFile == null
+                    ? _buildScanPrompt()
+                    : _buildImagePreview(),
+              ),
+            ),
+            
+            // Action buttons at bottom
+            Container(
+              padding: EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                color: AppColors.secondary,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_documentCount > 0)
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.md),
+                      margin: EdgeInsets.only(bottom: AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: AppColors.accent,
+                          ),
+                          SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              'Tap "Finish" when done to generate timeline',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton.icon(
+                          onPressed: _takePicture,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.secondary,
+                            padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.camera_alt, size: 24, color: Colors.white),
+                          label: Text(
+                            _imageFile == null ? 'Scan Document' : 'Scan Next',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_documentCount > 0) ...[
+                        SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isCompletingBatch ? null : _completeScanning,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.accent,
+                              foregroundColor: AppColors.secondary,
+                              padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              disabledBackgroundColor: AppColors.textTertiary,
+                            ),
+                            icon: _isCompletingBatch
+                                ? SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.secondary,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check_circle, size: 20),
+                            label: Text(
+                              _isCompletingBatch ? 'Processing' : 'Finish',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScanPrompt() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.9 + (value * 0.1),
+          child: Opacity(
+            opacity: value,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primary.withOpacity(0.12),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.document_scanner_outlined,
+                    size: 64,
+                    color: AppColors.primary,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.xl),
                 Text(
-                  'Tap "Scan Document" to start',
+                  _documentCount == 0
+                      ? 'Start Scanning'
+                      : 'Scan Next Document',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.sm),
+                Text(
+                  _documentCount == 0
+                      ? 'Tap the button below to begin'
+                      : '$_documentCount document${_documentCount != 1 ? "s" : ""} scanned so far',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
                   ),
                   textAlign: TextAlign.center,
-                )
-              else
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildImagePreview() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.9 + (value * 0.1),
+          child: Opacity(
+            opacity: value,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  margin: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                  padding: EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.success.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.success.withOpacity(0.3),
+                      width: 2,
+                    ),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Scanned $_documentCount document${_documentCount != 1 ? "s" : ""}. Tap "Done" when finished to generate timeline.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue[900],
-                          ),
+                      Icon(
+                        Icons.check_circle,
+                        color: AppColors.success,
+                        size: 28,
+                      ),
+                      SizedBox(width: AppSpacing.md),
+                      Text(
+                        'Document Captured!',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.success,
                         ),
                       ),
                     ],
                   ),
                 ),
-              
-              const SizedBox(height: 16),
-              
-              // Skip button
-              TextButton(
-                onPressed: () {
-                  print('🔙 [CameraScreen] User skipped, returning to previous screen');
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel & Go Back'),
-              ),
-            ],
+                SizedBox(height: AppSpacing.xl),
+                Icon(
+                  Icons.cloud_queue,
+                  size: 80,
+                  color: AppColors.accent,
+                ),
+                SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Auto-queuing for upload...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
+        );
+      },
+    ).also((_) {
+      // Auto-queue after animation
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && _imageFile != null) {
+          _uploadImage();
+        }
+      });
+    });
+  }
+}
+
+extension _WidgetExtension on Widget {
+  Widget also(void Function(Widget) action) {
+    action(this);
+    return this;
   }
 }

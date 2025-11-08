@@ -16,9 +16,9 @@
     "patient_name": "Test Patient",
     "token_number": 1,
     "priority": "normal",
-    "status": "in_progress",
+    "status": "completed",
     "added_at": "2025-11-08T16:41:57.273875",
     "started_at": "2025-11-08T16:42:21.584717",
-    "completed_at": null
+    "completed_at": "2025-11-08T18:28:09.345254"
   }
 ]

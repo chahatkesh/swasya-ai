@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../core/core.dart';
 import '../services/api_service.dart';
+import '../widgets/timeline_widgets.dart';
 
 class TimelineViewScreen extends StatefulWidget {
   final String patientId;
@@ -65,47 +67,70 @@ class _TimelineViewScreenState extends State<TimelineViewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
+        backgroundColor: AppColors.secondary,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Medical Timeline'),
+            Text(
+              'Medical Timeline',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
             Text(
               widget.patientName,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: AppColors.primary),
             onPressed: _loadTimeline,
             tooltip: 'Refresh',
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Loading timeline...'),
+                  CircularProgressIndicator(color: AppColors.primary),
+                  SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'Loading timeline...',
+                    style: AppTypography.bodyRegular,
+                  ),
                 ],
               ),
             )
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(AppSpacing.xxl),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 64, color: Colors.red),
-                        const SizedBox(height: 16),
+                        Icon(
+                          Icons.error_outline,
+                          size: AppSpacing.iconXLarge + 16,
+                          color: AppColors.error,
+                        ),
+                        SizedBox(height: AppSpacing.lg),
                         const Text(
                           'Failed to load timeline',
                           style: TextStyle(
@@ -113,13 +138,13 @@ class _TimelineViewScreenState extends State<TimelineViewScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: AppSpacing.sm),
                         Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppColors.textSecondary),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: AppSpacing.xxl),
                         ElevatedButton.icon(
                           onPressed: _loadTimeline,
                           icon: const Icon(Icons.refresh),
@@ -134,20 +159,23 @@ class _TimelineViewScreenState extends State<TimelineViewScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.timeline_outlined,
-                              size: 80, color: Colors.grey[400]),
-                          const SizedBox(height: 16),
+                          Icon(
+                            Icons.timeline_outlined,
+                            size: AppSpacing.iconXLarge + 32,
+                            color: AppColors.textTertiary,
+                          ),
+                          SizedBox(height: AppSpacing.lg),
                           Text(
                             'No timeline available',
                             style: TextStyle(
                               fontSize: 18,
-                              color: Colors.grey[600],
+                              color: AppColors.textSecondary,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: AppSpacing.sm),
                           Text(
                             'Scan documents to generate a timeline',
-                            style: TextStyle(color: Colors.grey[500]),
+                            style: TextStyle(color: AppColors.textTertiary),
                           ),
                         ],
                       ),
@@ -156,15 +184,22 @@ class _TimelineViewScreenState extends State<TimelineViewScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Timeline Events - AT THE TOP!
+                          if (_timeline!['timeline_events'] != null &&
+                              (_timeline!['timeline_events'] as List).isNotEmpty)
+                            _buildTimelineEvents(_timeline!['timeline_events']),
+
                           // Summary Card
                           if (_timeline!['summary'] != null)
                             Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
+                              margin: EdgeInsets.all(AppSpacing.lg),
+                              padding: EdgeInsets.all(AppSpacing.lg),
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
-                                border: Border(
-                                  bottom: BorderSide(color: Colors.blue[200]!),
+                                color: AppColors.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primary.withOpacity(0.2),
+                                  width: 1,
                                 ),
                               ),
                               child: Column(
@@ -172,24 +207,29 @@ class _TimelineViewScreenState extends State<TimelineViewScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.summarize, color: Colors.blue[700]),
-                                      const SizedBox(width: 8),
-                                      Text(
+                                      Icon(
+                                        Icons.summarize_outlined,
+                                        color: AppColors.primary,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: AppSpacing.sm),
+                                      const Text(
                                         'Summary',
                                         style: TextStyle(
-                                          fontSize: 18,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.blue[900],
+                                          color: Color(0xFF2C3E50),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 12),
+                                  SizedBox(height: AppSpacing.md),
                                   Text(
                                     _timeline!['summary'],
                                     style: const TextStyle(
                                       fontSize: 14,
-                                      height: 1.5,
+                                      height: 1.6,
+                                      color: Color(0xFF2C3E50),
                                     ),
                                   ),
                                 ],
@@ -200,77 +240,36 @@ class _TimelineViewScreenState extends State<TimelineViewScreen> {
                           if (_timeline!['current_medications'] != null &&
                               (_timeline!['current_medications'] as List).isNotEmpty)
                             _buildSection(
-                              icon: Icons.medication,
+                              icon: Icons.medication_outlined,
                               title: 'Current Medications',
-                              color: Colors.purple,
+                              color: AppColors.accent,
                               items: _timeline!['current_medications'],
-                              builder: (item) => ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.purple[100],
-                                  child: Icon(Icons.medication, color: Colors.purple),
-                                ),
-                                title: Text(
-                                  item['name'] ?? 'Unknown medication',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (item['dosage'] != null)
-                                      Text('Dosage: ${item['dosage']}'),
-                                    if (item['frequency'] != null)
-                                      Text('Frequency: ${item['frequency']}'),
-                                  ],
-                                ),
-                              ),
+                              builder: (item) => _buildMedicationCard(item),
                             ),
 
                           // Chronic Conditions
                           if (_timeline!['chronic_conditions'] != null &&
                               (_timeline!['chronic_conditions'] as List).isNotEmpty)
                             _buildSection(
-                              icon: Icons.local_hospital,
+                              icon: Icons.local_hospital_outlined,
                               title: 'Chronic Conditions',
-                              color: Colors.orange,
+                              color: AppColors.warning,
                               items: _timeline!['chronic_conditions'],
-                              builder: (item) => ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.orange[100],
-                                  child: Icon(Icons.local_hospital, color: Colors.orange),
-                                ),
-                                title: Text(
-                                  item is String ? item : (item['condition'] ?? 'Unknown'),
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                              builder: (item) => _buildConditionCard(item),
                             ),
 
                           // Allergies
                           if (_timeline!['allergies'] != null &&
                               (_timeline!['allergies'] as List).isNotEmpty)
                             _buildSection(
-                              icon: Icons.warning,
+                              icon: Icons.warning_outlined,
                               title: 'Allergies',
-                              color: Colors.red,
+                              color: AppColors.error,
                               items: _timeline!['allergies'],
-                              builder: (item) => ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.red[100],
-                                  child: Icon(Icons.warning, color: Colors.red),
-                                ),
-                                title: Text(
-                                  item is String ? item : (item['allergen'] ?? 'Unknown'),
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                              builder: (item) => _buildAllergyCard(item),
                             ),
 
-                          // Timeline Events
-                          if (_timeline!['timeline_events'] != null &&
-                              (_timeline!['timeline_events'] as List).isNotEmpty)
-                            _buildTimelineEvents(_timeline!['timeline_events']),
-
-                          const SizedBox(height: 24),
+                          SizedBox(height: AppSpacing.xxl),
                         ],
                       ),
                     ),
@@ -288,24 +287,36 @@ class _TimelineViewScreenState extends State<TimelineViewScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xxl,
+            AppSpacing.lg,
+            AppSpacing.md,
+          ),
           child: Row(
             children: [
-              Icon(icon, color: color),
-              const SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.all(AppSpacing.xs + 2),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              SizedBox(width: AppSpacing.md),
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: AppSpacing.sm),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -320,11 +331,47 @@ class _TimelineViewScreenState extends State<TimelineViewScreen> {
             ],
           ),
         ),
-        ...items.map((item) => Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: builder(item),
-            )),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            children: items.map((item) => builder(item)).toList(),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildMedicationCard(dynamic item) {
+    final dosageInfo = [
+      if (item['dosage'] != null) 'Dosage: ${item['dosage']}',
+      if (item['frequency'] != null) 'Frequency: ${item['frequency']}',
+    ].join(' • ');
+    
+    return MedicalInfoCard(
+      icon: Icons.medication_outlined,
+      color: AppColors.accent,
+      title: item['name'] ?? 'Unknown medication',
+      subtitle: dosageInfo,
+    );
+  }
+
+  Widget _buildConditionCard(dynamic item) {
+    final condition = item is String ? item : (item['condition'] ?? 'Unknown');
+    return MedicalInfoCard(
+      icon: Icons.local_hospital_outlined,
+      color: AppColors.warning,
+      title: condition,
+      subtitle: '',
+    );
+  }
+
+  Widget _buildAllergyCard(dynamic item) {
+    final allergen = item is String ? item : (item['allergen'] ?? 'Unknown');
+    return MedicalInfoCard(
+      icon: Icons.warning_outlined,
+      color: AppColors.error,
+      title: allergen,
+      subtitle: '',
     );
   }
 
@@ -332,128 +379,20 @@ class _TimelineViewScreenState extends State<TimelineViewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        TimelineHeader(eventCount: events.length),
+        
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-          child: Row(
-            children: [
-              const Icon(Icons.timeline, color: Colors.blue),
-              const SizedBox(width: 8),
-              const Text(
-                'Timeline Events',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${events.length}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.all(AppSpacing.lg),
           child: ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: events.length,
             itemBuilder: (context, index) {
-              final event = events[index];
-              return IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Timeline line
-                    SizedBox(
-                      width: 40,
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                          ),
-                          if (index < events.length - 1)
-                            Expanded(
-                              child: Container(
-                                width: 2,
-                                color: Colors.blue[200],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    // Event card
-                    Expanded(
-                      child: Card(
-                        margin: const EdgeInsets.only(bottom: 16, left: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (event['date'] != null)
-                                Text(
-                                  event['date'],
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              const SizedBox(height: 4),
-                              Text(
-                                event['description'] ?? 'No description',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  height: 1.4,
-                                ),
-                              ),
-                              if (event['medications'] != null &&
-                                  (event['medications'] as List).isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 4,
-                                  runSpacing: 4,
-                                  children: (event['medications'] as List)
-                                      .map((med) => Chip(
-                                            label: Text(
-                                              med is String ? med : med['name'] ?? '',
-                                              style: const TextStyle(fontSize: 10),
-                                            ),
-                                            backgroundColor: Colors.purple[50],
-                                            padding: EdgeInsets.zero,
-                                            materialTapTargetSize:
-                                                MaterialTapTargetSize.shrinkWrap,
-                                          ))
-                                      .toList(),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              return TimelineEventCard(
+                event: events[index],
+                index: index,
+                isFirst: index == 0,
+                isLast: index == events.length - 1,
               );
             },
           ),

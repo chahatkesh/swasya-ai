@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/core.dart';
 import '../services/api_service.dart';
+import '../widgets/soap_notes_sheet.dart';
 import 'camera_screen.dart';
 import 'record_audio_screen.dart';
 import 'timeline_view_screen.dart';
@@ -131,171 +132,20 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     
     if (_patientData == null || _patientData!['notes_count'] == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No SOAP notes available yet'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('No SOAP notes available yet'),
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
     }
 
-    // Show notes dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.note_alt, color: Colors.blue),
-            const SizedBox(width: 8),
-            const Expanded(child: Text('SOAP Notes')),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _patientData!['notes'].length,
-            itemBuilder: (context, index) {
-              final note = _patientData!['notes'][index];
-              final soapNote = note['soap_note'] ?? {};
-              
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Note ${index + 1}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            note['created_at']?.toString().substring(0, 10) ?? '',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // Chief Complaint
-                      if (soapNote['chief_complaint'] != null && soapNote['chief_complaint'].toString().isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.medical_services, size: 14, color: Colors.red),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  soapNote['chief_complaint'],
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      
-                      // Subjective
-                      if (soapNote['subjective'] != null && soapNote['subjective'].toString().isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'S: ',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue[700],
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  soapNote['subjective'],
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      
-                      // Assessment
-                      if (soapNote['assessment'] != null && soapNote['assessment'].toString().isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'A: ',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange[700],
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  soapNote['assessment'],
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      
-                      // Plan
-                      if (soapNote['plan'] != null && soapNote['plan'].toString().isNotEmpty)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'P: ',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green[700],
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                soapNote['plan'],
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+    // Properly cast the notes list
+    final notes = List<Map<String, dynamic>>.from(
+      (_patientData!['notes'] as List).map((note) => Map<String, dynamic>.from(note))
     );
+    
+    SoapNotesSheet.show(context, notes);
   }
 
   @override

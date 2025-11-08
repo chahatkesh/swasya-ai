@@ -154,5 +154,17 @@
     "last_visit": "2025-11-08T15:55:13.660740",
     "visit_count": 1,
     "status": "active"
+  },
+  "PAT_5308F7E6": {
+    "patient_id": "PAT_5308F7E6",
+    "uhid": "1234",
+    "name": "Vatsal Khanna",
+    "phone": "9878798960",
+    "age": 21,
+    "gender": "male",
+    "created_at": "2025-11-08T18:09:47.806488",
+    "last_visit": "2025-11-08T18:09:47.806553",
+    "visit_count": 1,
+    "status": "active"
   }
 }

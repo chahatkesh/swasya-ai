@@ -117,6 +117,22 @@
         "medications": [],
         "language": "hindi"
       }
+    },
+    {
+      "note_id": "NOTE_206B4331",
+      "patient_id": "PAT_72D90B86",
+      "created_at": "2025-11-08T17:44:57.116420",
+      "audio_file": "PAT_72D90B86_audio_16d1c7be.m4a",
+      "transcript": " \u0924\u094b \u0906\u092a\u0915\u093e \u0928\u093e\u092e \u0915\u094d\u092f\u093e \u0939\u0948 \u092e\u0947\u0930\u093e \u0928\u093e\u092e\u093e\u0901 \u0930\u093e\u091c \u0915\u0941\u092e\u093e\u0930 \u0939\u0948 \u0906\u092a \u0915\u094c\u0928 \u0938\u0947 \u0936\u0939\u0930 \u0938\u0947 \u0906\u092f\u0947 \u0939\u0948 \u0939\u0948 \u0939\u0948 \u092f\u0939\u0940\u0902 \u092a\u093e\u091c\u0921 \u0905\u0932\u0902\u0927\u0930 \u092a\u0902\u091c\u093e\u092c \u0938\u0947 \u0939\u0942\u0901 \u0920\u0940\u0915 \u0906\u092a\u0915\u094b \u0915\u094d\u092f\u093e \u0938\u092e\u0938\u094d\u092f\u093e \u0939\u0948 \u0938\u092e\u0938\u094d\u092f\u093e \u0939\u0948 \u0938\u0930\u094d\u0932\u093f\u092f\u093e \u092e\u0941\u091d\u0947 \u0914\u0930 \u0938\u0947 \u0915\u093f\u0924\u0928\u0947 \u0926\u093f\u0928\u094b\u0902 \u0938\u0947 \u0938\u0930\u094d\u0926\u0940 \u0939\u094b \u0917\u0908 \u0939\u094b\u0917\u0940 \u0932\u0917\u092d\u0917 2-3 \u0926\u093f\u0928 \u0938\u0947 \u0939\u0948 \u0906\u092a\u0928\u0947 \u092a\u0939\u0932\u0947 \u0915\u093f\u0938\u0940 \u0921\u0949\u0915\u094d\u091f\u0930 \u0915\u094b \u0926\u093f\u0916\u093e\u092f\u093e \u0905\u0927\u0947 \u092f\u0939\u0940 \u090f\u0938\u094d\u092a\u093f\u0924\u093e\u0932 \u092e\u0947\u0902 \u092c\u0948\u0920\u0924\u0947 \u0939\u0948\u0902 \u0935\u094b \u0921\u0949\u0915\u094d\u091f\u0930 \u0930\u092e\u0947\u0936 \u0939\u0948 \u0928\u093e \u0935\u094b \u0920\u0940\u0915 \u0939\u0948 \u092c\u0948\u0920\u0947 \u0930\u0939\u0940 \u0939\u0948 \u0921\u0949\u0915\u094d\u091f\u0930 \u0938\u093e\u092c \u0906\u092a\u0915\u093e \u092c\u0947\u091f \u0915\u0930\u0947\u0902",
+      "soap_note": {
+        "subjective": "Patient complains of cold symptoms for approximately 2-3 days. Previously seen by Dr. Ramesh at this hospital.",
+        "objective": "No objective findings noted during nursing intake.",
+        "assessment": "Awaiting physician's assessment.",
+        "plan": "Patient to be seen by physician for further evaluation and management.",
+        "chief_complaint": "Cold symptoms for 2-3 days.",
+        "medications": [],
+        "language": "hindi"
+      }
     }
   ],
   "PAT_191908CF": [
@@ -134,6 +150,152 @@
         "chief_complaint": "Fever.",
         "medications": [],
         "language": "english"
+      }
+    },
+    {
+      "note_id": "NOTE_B5B9DC83",
+      "patient_id": "PAT_191908CF",
+      "created_at": "2025-11-08T17:55:42.488382",
+      "audio_file": "PAT_191908CF_audio_782a07b1.m4a",
+      "transcript": " \u0905\u091c\u092f \u0916\u092c \u0932\u0941\u091f",
+      "soap_note": {
+        "subjective": "No medical information related to patient's complaints or symptoms found in the conversation.",
+        "objective": "No observable facts, vitals, or physical examination findings found in the conversation.",
+        "assessment": "No medical assessment or likely diagnosis can be made from the conversation.",
+        "plan": "No treatment plan, medications, or follow-up instructions found in the conversation.",
+        "chief_complaint": "No primary reason for visit identified in the conversation.",
+        "medications": [],
+        "language": "hindi"
+      }
+    },
+    {
+      "note_id": "NOTE_627D3880",
+      "patient_id": "PAT_191908CF",
+      "created_at": "2025-11-08T18:00:51.631990",
+      "audio_file": "PAT_191908CF_audio_7c9452fa.m4a",
+      "transcript": " Hello, I am speaking something and these are the waveforms Chahat sir will see now. Chahat sir, these are the waveforms which are being generated. These are not very accurate but it looks good. If I make actual waveforms, it's difficult to do it. But these look decent enough, I think it's good. Good to go.",
+      "soap_note": {
+        "subjective": "No medical complaints or symptoms mentioned by the patient.",
+        "objective": "No observable medical facts, vitals, or physical examination findings described.",
+        "assessment": "No medical assessment or diagnosis can be made based on the provided conversation.",
+        "plan": "No medical treatment plan, medications, or follow-up instructions discussed.",
+        "chief_complaint": "No chief complaint or reason for a medical visit articulated.",
+        "medications": [],
+        "language": "english"
+      }
+    }
+  ],
+  "PAT_5308F7E6": [
+    {
+      "note_id": "NOTE_FDB5B77D",
+      "patient_id": "PAT_5308F7E6",
+      "created_at": "2025-11-08T18:13:54.063111",
+      "audio_file": "PAT_5308F7E6_audio_65a13540.m4a",
+      "transcript": " \u0924\u094b\u0921\u093c\u0940 \u0938\u0940 \u0920\u0902\u0921 \u0932\u0917 \u0930\u0939\u0940 \u0939\u0948 \u0920\u0940\u0915 \u0939\u0948 \u0906\u092a \u0932\u093e\u0907\u0928 \u092e\u0947\u0902 \u092c\u0948\u0920\u0940 \u0921\u0949\u0915\u094d\u0930\u094b \u0938\u093e\u092c \u0926\u0947\u0916 \u0930\u0939\u0947 \u0939\u0948\u0902",
+      "soap_note": {
+        "subjective": "Patient reports feeling a bit cold.",
+        "objective": "",
+        "assessment": "",
+        "plan": "Patient instructed to wait in line to see the doctor.",
+        "chief_complaint": "Patient reports feeling a bit cold.",
+        "medications": [],
+        "language": "hindi"
+      }
+    },
+    {
+      "note_id": "NOTE_919AD8FC",
+      "patient_id": "PAT_5308F7E6",
+      "created_at": "2025-11-08T18:15:31.333420",
+      "audio_file": "PAT_5308F7E6_audio_2e5ddebf.m4a",
+      "transcript": " \u0939\u093e\u0901 \u092d\u093e\u0908 \u0905\u0917\u0932\u0947 \u0928\u092e\u092c\u0930 \u0915\u093f\u0938\u0915\u093e \u0939\u0948 \u092e\u0947\u0930\u093e \u0939\u0948 \u091c\u0940 \u0928\u093e\u092e \u092c\u0926\u093e\u0907\u090f \u0935\u091a\u094d\u091b\u0932 \u0916\u0930\u094d\u0928\u093e \u0915\u094d\u092f\u093e \u0926\u093f\u0915\u094d\u0924\u093e \u091a\u093e\u090f \u092e\u0947\u0930\u0947 \u0938\u093f\u0930 \u092e\u0947\u0902 \u092c\u0939\u0941\u0924 \u0926\u0930\u094d\u0926 \u0939\u094b \u0930\u0939\u093e \u0939\u0948 \u0915\u092c \u0938\u0947 \u0915\u0932 \u0930\u093e\u0924 \u0938\u0947 \u0915\u0932 \u0930\u093e\u0924 \u0938\u0947 \u0938\u093f\u0930\u094d\u0926\u0930\u094d\u0926 \u0915\u0947 \u0932\u093e\u0935\u093e \u0914\u0930 \u0915\u0941\u091b \u092c\u0941\u0916\u093e\u0930 \u0938\u0930\u094d\u0926\u0940 \u0916\u093e\u0938\u0940 \u0925\u094b\u0921\u093c\u093e \u0938\u093e \u092c\u0941\u0916\u093e\u0930 \u092d\u0940 \u0939\u0948 \u091c\u0940 \u0907\u091a\u094d\u091b\u093e \u0920\u0940\u0915 \u0939\u0948 \u0906\u092a \u0932\u093e",
+      "soap_note": {
+        "subjective": "Patient reports severe headache and mild fever since last night.",
+        "objective": "No objective findings documented in this initial triage.",
+        "assessment": "Patient presenting with symptoms of headache and fever, duration last night. Requires further medical evaluation.",
+        "plan": "Patient directed to proceed for further medical consultation.",
+        "chief_complaint": "Severe headache and mild fever since last night.",
+        "medications": [],
+        "language": "hindi"
+      }
+    },
+    {
+      "note_id": "NOTE_1A7BBFB2",
+      "patient_id": "PAT_5308F7E6",
+      "created_at": "2025-11-08T18:19:05.398052",
+      "audio_file": "PAT_5308F7E6_audio_ee13d2ce.m4a",
+      "transcript": " \u0915\u0930\u093e \u0926\u0932\u094d\u0936 \u092a\u0930\u092a\u0928\u0947\u0902 \u0932\u0915\u094d\u0930\u0935\u0930\u0940 \u0939\u0948 \u092c\u0941\u0916\u093e\u0930 \u092c\u0941\u0916\u093e\u0930 \u0939\u0948 \u0915\u092c \u092e\u0941\u091d\u0947 \u092d\u0940 \u092e\u0941\u0916\u0947\u0902 \u0915\u094b \u0926\u0941\u0916\u094d\u0930\u093e\u0930 \u0939\u0948 \u0924\u0930\u0947\u092e \u092f\u0939 \u092e\u0941\u091d\u0947\u092b\u093e\u0908\u0917\u0940 \u0921\u0947\u0902\u0917\u0942 \u092f\u093e \u092e\u0948\u0932\u0947\u0930\u093f\u092f \u0915\u0947 \u0915\u094b\u0908 \u091f\u0947\u0938\u094d\u091f \u0915\u0930\u093e\u092f\u093e \u0905\u092d\u0940 \u0924\u0915 \u0928\u0939\u0940\u0902 \u0915\u0930\u0935\u093e\u092f\u093e \u092e\u0948\u0902 \u0935\u0939\u0940 \u0915\u0930\u0935\u093e\u0928\u0947 \u0906\u090f \u0939\u0942\u0901 \u0920\u0940\u0915 \u0939\u0948",
+      "soap_note": {
+        "subjective": "Patient reports fever and body aches ('\u092e\u0941\u0916\u0947\u0902 \u0915\u094b \u0926\u0941\u0916\u094d\u0930\u093e\u0930' interpreted as headache/bodyache). States no prior testing for Dengue or Malaria has been done and presents to get these tests.",
+        "objective": "No objective findings mentioned in the conversation.",
+        "assessment": "Acute febrile illness. Differential diagnoses include viral fever, Dengue, and Malaria.",
+        "plan": "Investigations for Dengue (NS1, IgM, IgG) and Malaria (Peripheral Smear for Malarial Parasite/Rapid Diagnostic Test). Symptomatic management for fever and pain. Advise follow-up with test results.",
+        "chief_complaint": "Fever and body aches; presenting for Dengue and Malaria testing.",
+        "medications": [],
+        "language": "mixed"
+      }
+    },
+    {
+      "note_id": "NOTE_7C8F407A",
+      "patient_id": "PAT_5308F7E6",
+      "created_at": "2025-11-08T18:20:30.326926",
+      "audio_file": "PAT_5308F7E6_audio_2f97c523.m4a",
+      "transcript": " \u0924\u094b\u0915\u0947 \u0924\u094b \u0935\u093e\u091f \u0907\u0938 \u0928\u0947\u092e \u0928\u0947\u092e \u0907\u0938 \u0930\u093f\u0936\u093f\u092f \u0939\u0941\u091c\u093e \u0935\u093e\u091f \u0907\u0938 \u092f\u094b \u092a\u094d\u0930\u094b\u092c\u094d\u0932\u092e \u0906\u092a \u092f\u093e\u0930",
+      "soap_note": {
+        "subjective": "No complaints or symptoms stated by the patient in this fragment.",
+        "objective": "No objective findings or examination details mentioned.",
+        "assessment": "No medical assessment possible based on the provided conversation.",
+        "plan": "No treatment plan or instructions provided.",
+        "chief_complaint": "Chief complaint not stated by the patient; nurse inquired about the problem.",
+        "medications": [],
+        "language": "mixed"
+      }
+    },
+    {
+      "note_id": "NOTE_36C0E806",
+      "patient_id": "PAT_5308F7E6",
+      "created_at": "2025-11-08T18:24:17.231625",
+      "audio_file": "PAT_5308F7E6_audio_1dc8780e.m4a",
+      "transcript": " \u0939\u0948 \u0935\u0939\u0924\u0932\u092e \u0935\u0930\u0939 \u0926\u093f\u0939 \u0932\u0941\u0917\u0924\u093f \u0928\u093f\u092e\u0940\u0923 \u0928\u092e\u0940\u0915\u0947 \u0935\u091a\u093f\u0932 \u0915\u0928\u0947 \u0935\u093f\u092a\u091a\u094d\u0937\u093e\u0926 \u0915\u0930bers spiritual \u0932\u0947\u0917 \u0930 \u0938\u0947\u092e\u0947 \u0907\u0938 \u0907\u0938\u094d \u0906\u092e\u094b\u090a\u0937\u0927 \u0915\u0947\u0902 \u314b\u314b\u314b \u0938\u094d\u092c\u094d\u0930\u0941\u0915\u094d\u0930\u0942\u0932 \u0924\u0930\u0939 \u092d\u0940 \u0907\u092a\u094d\u092e\u0947\u0932 \u092e\u094b\u0930\u094d\u0928 \u0905\u0928\u0902\u0927\u094d\u092f\u0942\u0932 \u0915\u0947 \u092e\u093f\u0932\u0926 catch \u0915\u0930 \u0932\u0941\u0917\u0915\u093e \u0915\u094d\u092f\u093e\u0964 \u0907\u0938\u094d\u0926\u0947\u0902 \u0935\u0947\u0930 \u0936\u092f\u0942 \u0925\u093e \u0915\u094d\u0935\u0947\u0902\u0940 \u091f\u0930\u0942\u0932 ? alright, sit in the queue, doctor will be waiting for you",
+      "soap_note": {
+        "subjective": "Patient's statements are largely incomprehensible, preventing the extraction of specific complaints or symptoms.",
+        "objective": "Not specified in the conversation.",
+        "assessment": "Not specified in the conversation.",
+        "plan": "Patient instructed to sit in the queue to wait for the doctor for further evaluation.",
+        "chief_complaint": "Unable to determine due to incomprehensible patient dialogue.",
+        "medications": [],
+        "language": "mixed"
+      }
+    },
+    {
+      "note_id": "NOTE_D3E700C4",
+      "patient_id": "PAT_5308F7E6",
+      "created_at": "2025-11-08T18:25:53.959069",
+      "audio_file": "PAT_5308F7E6_audio_fa7b8016.m4a",
+      "transcript": " escr \u091c\u094b \u0915\u0947 \u0935\u0947\u091f \u0935\u093e\u0926 \u0926\u0949\u0915\u094d\u0924\u0930\u094d\u0938",
+      "soap_note": {
+        "subjective": "",
+        "objective": "",
+        "assessment": "",
+        "plan": "",
+        "chief_complaint": "",
+        "medications": [],
+        "language": "hindi"
+      }
+    },
+    {
+      "note_id": "NOTE_C435D598",
+      "patient_id": "PAT_5308F7E6",
+      "created_at": "2025-11-08T18:27:00.755962",
+      "audio_file": "PAT_5308F7E6_audio_704abcf8.m4a",
+      "transcript": "<|hi|> . \u0935\u094b\u0924 \u0907\u0938 \u092c\u0940\u092e \u0928\u0947\u092e\u0964 \u0935\u0924\u094d\u0938\u0932 \u0916\u0928\u0928\u093e \u0935\u094b\u0924 \u0907\u0938 \u0906\u090f \u0917\u0941\u0921\u093c\u0941\u0902\u092a\u093e\u0930\u094d\u0938\u0940\u0928 \u0915\u0928\u0947 \u0938\u0940 \u0939\u0940 Anybody. \u090f\u0925\u0947 \u092f\u0939\u093e\u090f\u0902 \u092a\u0942\u0930\u094d\u0926\u093e sa\u011f\u0923\u093e\u0935\u0915\u0930\u094d\u0938 \u0932\u0947\u092d\u0940 \u091ammolina \u0924\u094b \u0924\u094b \u091c\u0940 \u092d\u0940 \u0938\u0947\u0935\u093f\u090f \u0924\u094b \u092d\u093e\u0937\u093f\u092e \u0927\u093f\u0938 \u0936\u0940 \u092e\u0942\u0930 zer\u093e \u0915\u0930 \u0924\u094b \u092c\u0948\u0902\u0928\u093e \u092e\u0948\u0902 \u092c\u0942\u0930\u094d\u0938\u094b\u0902 \u0918\u0942\u091c\u093c\u0941 \u0915\u094b\u2026\u2026 I actually ended up seeing you and fever arose. Maybe it is stress. Okay, stress. Okay, now let's talk to the doctor. Chutya.",
+      "soap_note": {
+        "subjective": "Patient reports fever, stating it \"arose\" and attributing it possibly to stress.",
+        "objective": "No objective data available from the provided conversation.",
+        "assessment": "No medical assessment made during this initial conversation.",
+        "plan": "Patient to consult with the doctor.",
+        "chief_complaint": "Fever",
+        "medications": [],
+        "language": "mixed"
       }
     }
   ]

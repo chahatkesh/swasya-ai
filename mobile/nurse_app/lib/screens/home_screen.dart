@@ -367,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
-                          // Patient list
+                          // Patient list - chronological order (newest at bottom)
                           Expanded(
                             child: ListView.builder(
                               itemCount: _patients.length,
@@ -376,7 +376,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 vertical: AppSpacing.md,
                               ),
                               itemBuilder: (context, index) {
+                                // Direct index (newest patients appear at bottom)
                                 final patient = _patients[index];
+                                final queuePosition = index + 1; // Position in queue (1-based)
                                 final status = _getPatientStatus(patient);
                                 final patientName = patient['name'] ?? 'Unknown Patient';
                                 final uhid = patient['uhid'];
@@ -398,151 +400,229 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ? infoItems.join(' • ') 
                                     : 'No additional info';
                                 
-                                return Container(
-                                  height: 72, // Fixed height - reduced for cleaner look
-                                  margin: EdgeInsets.only(bottom: AppSpacing.md),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.secondary,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppColors.primary.withOpacity(0.15),
-                                      width: 1,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.04),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      onTap: () => _navigateToPatientDetail(patient),
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.lg,
-                                          vertical: AppSpacing.md,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            // Status indicator with animated icon
-                                            TweenAnimationBuilder<double>(
-                                              tween: Tween(begin: 0.0, end: 1.0),
-                                              duration: const Duration(milliseconds: 600),
-                                              curve: Curves.easeOut,
-                                              builder: (context, value, child) {
-                                                return Transform.scale(
-                                                  scale: 0.8 + (value * 0.2),
-                                                  child: Opacity(
-                                                    opacity: value,
-                                                    child: Container(
-                                                      width: 44,
-                                                      height: 44,
+                                return TweenAnimationBuilder<double>(
+                                  tween: Tween(begin: 0.0, end: 1.0),
+                                  duration: Duration(milliseconds: 400 + (index * 50)),
+                                  curve: Curves.easeOut,
+                                  builder: (context, animValue, child) {
+                                    return Opacity(
+                                      opacity: animValue,
+                                      child: Transform.translate(
+                                        offset: Offset(0, 20 * (1 - animValue)),
+                                        child: Container(
+                                          margin: EdgeInsets.only(bottom: AppSpacing.md),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              // Queue position with connecting line
+                                              SizedBox(
+                                                width: 50,
+                                                child: Column(
+                                                  children: [
+                                                    // Position badge
+                                                    Container(
+                                                      width: 40,
+                                                      height: 40,
                                                       decoration: BoxDecoration(
-                                                        color: _getStatusColor(status).withOpacity(0.12),
-                                                        borderRadius: BorderRadius.circular(10),
+                                                        gradient: LinearGradient(
+                                                          colors: queuePosition == 1
+                                                              ? [AppColors.accent, AppColors.accent.withOpacity(0.8)]
+                                                              : [AppColors.primary, AppColors.primaryHover],
+                                                          begin: Alignment.topLeft,
+                                                          end: Alignment.bottomRight,
+                                                        ),
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(
+                                                          color: AppColors.secondary,
+                                                          width: 2.5,
+                                                        ),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: (queuePosition == 1 ? AppColors.accent : AppColors.primary)
+                                                                .withOpacity(0.3),
+                                                            blurRadius: 8,
+                                                            spreadRadius: 2,
+                                                          ),
+                                                        ],
                                                       ),
-                                                      child: status == 'uploading' || status == 'generating'
-                                                          ? Center(
-                                                              child: SizedBox(
-                                                                width: 22,
-                                                                height: 22,
-                                                                child: CircularProgressIndicator(
-                                                                  strokeWidth: 2.5,
-                                                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                                                    _getStatusColor(status),
-                                                                  ),
-                                                                ),
+                                                      child: Center(
+                                                        child: Text(
+                                                          '$queuePosition',
+                                                          style: TextStyle(
+                                                            fontSize: queuePosition == 1 ? 18 : 16,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: AppColors.secondary,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    // Connecting line (not for last item)
+                                                    if (index < _patients.length - 1)
+                                                      Container(
+                                                        width: 3,
+                                                        height: 50,
+                                                        margin: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                                                        decoration: BoxDecoration(
+                                                          gradient: LinearGradient(
+                                                            colors: [
+                                                              AppColors.primary.withOpacity(0.4),
+                                                              AppColors.primary.withOpacity(0.1),
+                                                            ],
+                                                            begin: Alignment.topCenter,
+                                                            end: Alignment.bottomCenter,
+                                                          ),
+                                                          borderRadius: BorderRadius.circular(2),
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                              
+                                              // Patient card
+                                              Expanded(
+                                                child: Container(
+                                                  height: 88,
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.secondary,
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    border: Border.all(
+                                                      color: queuePosition == 1
+                                                          ? AppColors.accent.withOpacity(0.3)
+                                                          : AppColors.primary.withOpacity(0.15),
+                                                      width: queuePosition == 1 ? 2 : 1,
+                                                    ),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black.withOpacity(0.04),
+                                                        blurRadius: 8,
+                                                        offset: const Offset(0, 2),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: Material(
+                                                    color: Colors.transparent,
+                                                    child: InkWell(
+                                                      onTap: () => _navigateToPatientDetail(patient),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                      child: Padding(
+                                                        padding: EdgeInsets.all(AppSpacing.md),
+                                                        child: Row(
+                                                          children: [
+                                                            // Status indicator
+                                                            Container(
+                                                              width: 48,
+                                                              height: 48,
+                                                              decoration: BoxDecoration(
+                                                                color: _getStatusColor(status).withOpacity(0.12),
+                                                                borderRadius: BorderRadius.circular(10),
                                                               ),
-                                                            )
-                                                          : Icon(
-                                                              _getStatusIcon(status),
-                                                              color: _getStatusColor(status),
-                                                              size: 22,
+                                                              child: status == 'uploading' || status == 'generating'
+                                                                  ? Center(
+                                                                      child: SizedBox(
+                                                                        width: 24,
+                                                                        height: 24,
+                                                                        child: CircularProgressIndicator(
+                                                                          strokeWidth: 2.5,
+                                                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                                                            _getStatusColor(status),
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    )
+                                                                  : Icon(
+                                                                      _getStatusIcon(status),
+                                                                      color: _getStatusColor(status),
+                                                                      size: 24,
+                                                                    ),
                                                             ),
+                                                            SizedBox(width: AppSpacing.md),
+                                                            
+                                                            // Patient details
+                                                            Expanded(
+                                                              child: Column(
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                                children: [
+                                                                  // Queue badge + name
+                                                                  Row(
+                                                                    children: [
+                                                                      if (queuePosition == 1)
+                                                                        Container(
+                                                                          padding: const EdgeInsets.symmetric(
+                                                                            horizontal: 6,
+                                                                            vertical: 2,
+                                                                          ),
+                                                                          decoration: BoxDecoration(
+                                                                            color: AppColors.accent,
+                                                                            borderRadius: BorderRadius.circular(4),
+                                                                          ),
+                                                                          child: Text(
+                                                                            'NEXT',
+                                                                            style: TextStyle(
+                                                                              fontSize: 9,
+                                                                              fontWeight: FontWeight.bold,
+                                                                              color: AppColors.secondary,
+                                                                              letterSpacing: 0.5,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      if (queuePosition == 1)
+                                                                        const SizedBox(width: 6),
+                                                                      Expanded(
+                                                                        child: Text(
+                                                                          patientName,
+                                                                          style: TextStyle(
+                                                                            fontSize: 15,
+                                                                            fontWeight: queuePosition == 1 
+                                                                                ? FontWeight.bold 
+                                                                                : FontWeight.w600,
+                                                                            color: const Color(0xFF2C3E50),
+                                                                            letterSpacing: -0.2,
+                                                                            height: 1.2,
+                                                                          ),
+                                                                          maxLines: 1,
+                                                                          overflow: TextOverflow.ellipsis,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  const SizedBox(height: 4),
+                                                                  
+                                                                  // Secondary info
+                                                                  Text(
+                                                                    secondaryInfo,
+                                                                    style: TextStyle(
+                                                                      fontSize: 12,
+                                                                      color: AppColors.textSecondary,
+                                                                      letterSpacing: -0.1,
+                                                                      height: 1.2,
+                                                                    ),
+                                                                    maxLines: 1,
+                                                                    overflow: TextOverflow.ellipsis,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            
+                                                            // Arrow icon
+                                                            Icon(
+                                                              Icons.arrow_forward_ios,
+                                                              size: 16,
+                                                              color: AppColors.textTertiary,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
-                                                );
-                                              },
-                                            ),
-                                            SizedBox(width: AppSpacing.md),
-                                            
-                                            // Patient details
-                                            Expanded(
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  // Patient name
-                                                  Text(
-                                                    patientName,
-                                                    style: const TextStyle(
-                                                      fontSize: 15,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Color(0xFF2C3E50),
-                                                      letterSpacing: -0.2,
-                                                      height: 1.2,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                  const SizedBox(height: 3),
-                                                  
-                                                  // Secondary info (UHID, Age, Gender)
-                                                  Text(
-                                                    secondaryInfo,
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: AppColors.textSecondary,
-                                                      letterSpacing: -0.1,
-                                                      height: 1.2,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ],
+                                                ),
                                               ),
-                                            ),
-                                            
-                                            // Status icon on right (with subtle pulse for active states)
-                                            if (status == 'uploading' || status == 'generating')
-                                              TweenAnimationBuilder<double>(
-                                                tween: Tween(begin: 0.9, end: 1.0),
-                                                duration: const Duration(milliseconds: 800),
-                                                curve: Curves.easeInOut,
-                                                builder: (context, value, child) {
-                                                  return Transform.scale(
-                                                    scale: value,
-                                                    child: Icon(
-                                                      status == 'uploading' 
-                                                          ? Icons.cloud_upload_outlined
-                                                          : Icons.auto_awesome_outlined,
-                                                      color: _getStatusColor(status).withOpacity(0.6),
-                                                      size: 18,
-                                                    ),
-                                                  );
-                                                },
-                                                onEnd: () {
-                                                  // Loop animation
-                                                  if (mounted) {
-                                                    setState(() {});
-                                                  }
-                                                },
-                                              )
-                                            else
-                                              Icon(
-                                                Icons.arrow_forward_ios_rounded,
-                                                color: AppColors.textTertiary.withOpacity(0.5),
-                                                size: 14,
-                                              ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
+                                    );
+                                  },
                                 );
                               },
                             ),
