@@ -281,14 +281,11 @@ const PatientQueue = ({ patients, selectedPatient, onPatientSelect, onQueueUpdat
     return (
       <div
         key={patient.id}
-        className={`
-          relative p-3 rounded-lg border transition-all duration-150
-          cursor-pointer hover:shadow-sm
-          ${isSelected ? 'ring-2' : ''}
-        `}
+        className="relative p-3 rounded-lg border transition-all duration-150 cursor-pointer hover:shadow-sm"
         style={{
           backgroundColor: isSelected ? colors.primary10 : colors.background,
-          borderColor: isSelected ? colors.primary : colors.border
+          borderColor: isSelected ? colors.primary : colors.border,
+          boxShadow: isSelected ? `0 0 0 2px ${colors.primary}80` : 'none' // Custom ring effect with theme color
         }}
         onClick={() => onPatientSelect(patient)}
       >
@@ -369,8 +366,8 @@ const PatientQueue = ({ patients, selectedPatient, onPatientSelect, onQueueUpdat
   return (
     <div className="h-full flex flex-col" style={{ backgroundColor: colors.surface }}>
       {/* Header */}
-      <div className="p-6 border-b" style={{ borderColor: colors.border }}>
-        <div className="flex items-center justify-between mb-4">
+      <div className="h-20 flex flex-col justify-center p-6 border-b" style={{ borderColor: colors.border }}>
+        <div className="flex items-center justify-between">
           <h2 
             className="text-xl font-medium"
             style={{ color: colors.textPrimary }}
@@ -441,11 +438,12 @@ const PatientQueue = ({ patients, selectedPatient, onPatientSelect, onQueueUpdat
                     return (
                       <div
                         key={patient.id}
-                        className={`relative p-3 rounded-xl border transition-all duration-150 cursor-pointer ${isSelected ? 'ring-2' : ''}`}
+                        className="relative p-3 rounded-xl border transition-all duration-150 cursor-pointer"
                         style={{
                           backgroundColor: isSelected ? colors.primary10 : colors.background,
                           borderColor: isSelected ? colors.primary : colors.border,
-                          borderLeft: `3px solid ${colors.success}`
+                          borderLeft: `3px solid ${colors.success}`,
+                          boxShadow: isSelected ? `0 0 0 2px ${colors.primary}80` : 'none' // Custom ring effect with theme color
                         }}
                         onClick={() => onPatientSelect(patient)}
                       >

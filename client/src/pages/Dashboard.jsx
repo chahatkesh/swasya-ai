@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { colors } from '../utils/colors'
 import PatientQueue from '../components/dashboard/PatientQueue'
 import LiveEncounter from '../components/dashboard/LiveEncounter'
 import PatientHistory from '../components/dashboard/PatientHistory'
 import { patientsAPI, queueAPI, notesAPI, statsAPI, transformers, polling } from '../utils/api'
-import { FiRefreshCw } from 'react-icons/fi'
+import { FiRefreshCw, FiMap, FiSettings, FiUsers, FiActivity, FiFileText, FiMenu } from 'react-icons/fi'
 
 const Dashboard = () => {
+  const navigate = useNavigate()
   const [patients, setPatients] = useState([])
   const [selectedPatient, setSelectedPatient] = useState(null)
   const [encounterData, setEncounterData] = useState(null)
@@ -14,6 +16,10 @@ const Dashboard = () => {
   const [lastRefresh, setLastRefresh] = useState(new Date())
   const [loading, setLoading] = useState(true)
   const [dashboardStats, setDashboardStats] = useState(null)
+  
+  // Mobile state management
+  const [activeTab, setActiveTab] = useState('queue') // 'queue', 'encounter', 'history'
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const formatTime = (date) => {
     return date.toLocaleTimeString('en-US', {
@@ -82,6 +88,11 @@ const Dashboard = () => {
   const handlePatientSelect = async (patient) => {
     setSelectedPatient(patient)
     
+    // On mobile, switch to encounter tab when patient is selected
+    if (window.innerWidth < 1024) {
+      setActiveTab('encounter')
+    }
+    
     // Load encounter data and timeline for the LiveEncounter component
     try {
       const [latestNote, timeline] = await Promise.all([
@@ -111,8 +122,97 @@ const Dashboard = () => {
     }
   }
 
-  const handleRefresh = async () => {
-    await loadInitialData()
+  // Navigation handlers
+  const handleSwasyaMapClick = () => {
+    navigate('/swasya-map')
+  }
+
+  // Mobile utility functions
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    setIsMobileMenuOpen(false)
+  }
+
+  // Mobile component renderer
+  const renderMobileView = () => {
+    return (
+      <div className="lg:hidden flex flex-col h-full">
+        {/* Mobile Tab Navigation */}
+        <div 
+          className="flex border-b"
+          style={{ borderColor: colors.border }}
+        >
+          <button
+            onClick={() => handleTabChange('queue')}
+            className={`flex-1 flex items-center justify-center gap-2 p-4 text-sm font-medium transition-colors ${
+              activeTab === 'queue' ? 'border-b-2' : ''
+            }`}
+            style={{
+              color: activeTab === 'queue' ? colors.primary : colors.textSecondary,
+              borderBottomColor: activeTab === 'queue' ? colors.primary : 'transparent'
+            }}
+          >
+            <FiUsers size={16} />
+            Queue
+          </button>
+          <button
+            onClick={() => handleTabChange('encounter')}
+            className={`flex-1 flex items-center justify-center gap-2 p-4 text-sm font-medium transition-colors ${
+              activeTab === 'encounter' ? 'border-b-2' : ''
+            }`}
+            style={{
+              color: activeTab === 'encounter' ? colors.primary : colors.textSecondary,
+              borderBottomColor: activeTab === 'encounter' ? colors.primary : 'transparent'
+            }}
+          >
+            <FiActivity size={16} />
+            Encounter
+          </button>
+          <button
+            onClick={() => handleTabChange('history')}
+            className={`flex-1 flex items-center justify-center gap-2 p-4 text-sm font-medium transition-colors ${
+              activeTab === 'history' ? 'border-b-2' : ''
+            }`}
+            style={{
+              color: activeTab === 'history' ? colors.primary : colors.textSecondary,
+              borderBottomColor: activeTab === 'history' ? colors.primary : 'transparent'
+            }}
+          >
+            <FiFileText size={16} />
+            History
+          </button>
+        </div>
+
+        {/* Mobile Tab Content */}
+        <div className="flex-1 overflow-hidden">
+          {activeTab === 'queue' && (
+            <PatientQueue
+              patients={patients}
+              selectedPatient={selectedPatient}
+              onPatientSelect={handlePatientSelect}
+              onQueueUpdate={loadInitialData}
+            />
+          )}
+          {activeTab === 'encounter' && (
+            <LiveEncounter
+              encounterData={encounterData}
+              selectedPatient={selectedPatient}
+              timelineData={timelineData}
+              onConsultationAction={loadInitialData}
+            />
+          )}
+          {activeTab === 'history' && (
+            <PatientHistory
+              selectedPatient={selectedPatient}
+            />
+          )}
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -138,26 +238,22 @@ const Dashboard = () => {
       style={{ backgroundColor: colors.background }}
     >
       <div 
-        className="h-16 flex items-center justify-between px-6 border-b"
+        className="h-16 flex items-center justify-between px-4 sm:px-6 border-b"
         style={{ 
           backgroundColor: colors.surface,
           borderColor: colors.border 
         }}
       >
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6">
           <h1 
-            className="text-xl font-medium"
-            style={{ color: colors.textPrimary }}
+            className="text-lg sm:text-xl font-medium"
+            style={{ color: colors.textSecondary }}
           >
-            Doctor's Dashboard
+            Swasya AI
           </h1>
-          <div className="flex items-center gap-4">
-            <span 
-              className="text-sm"
-              style={{ color: colors.textSecondary }}
-            >
-              Swasya AI
-            </span>
+          
+          {/* Desktop Dashboard Label & Navigation */}
+          <div className="hidden sm:flex items-center gap-4">
             <div 
               className="h-4 w-px"
               style={{ backgroundColor: colors.border }}
@@ -166,87 +262,134 @@ const Dashboard = () => {
               className="text-sm font-medium"
               style={{ color: colors.primary }}
             >
-              PHC Clinic Dashboard
+              Doctor's Dashboard
             </span>
           </div>
+          
+          {/* Desktop Navigation Buttons */}
+          <div className="hidden lg:flex items-center gap-3 ml-6">
+            <button
+              onClick={handleSwasyaMapClick}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:opacity-80"
+              style={{
+                backgroundColor: colors.primary,
+                color: colors.surface
+              }}
+            >
+              Swasya Map
+            </button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={toggleMobileMenu}
+            className="lg:hidden p-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: isMobileMenuOpen ? colors.primary20 : 'transparent',
+              color: colors.textPrimary
+            }}
+          >
+            <FiMenu size={20} />
+          </button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Mobile Navigation Dropdown */}
+          {isMobileMenuOpen && (
+            <div 
+              className="absolute top-16 left-0 right-0 lg:hidden border-b z-50"
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border
+              }}
+            >
+              <div className="p-4 space-y-3">
+                <button
+                  onClick={handleSwasyaMapClick}
+                  className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                  style={{
+                    backgroundColor: colors.primary,
+                    color: colors.surface
+                  }}
+                >
+                  Swasya Map
+                </button>
+              </div>
+            </div>
+          )}
+          
           <div className="text-right">
             <div 
               className="text-sm font-medium"
               style={{ color: colors.textPrimary }}
             >
-              Dr. Sarah Patel
+              Dr. Shubham
             </div>
             <div 
-              className="text-xs"
+              className="text-xs hidden sm:block"
               style={{ color: colors.textSecondary }}
             >
               Last refresh: {formatTime(lastRefresh)}
             </div>
           </div>
-          
-          <button
-            onClick={handleRefresh}
-            className="p-2 rounded-lg transition-colors duration-200 hover:bg-opacity-80"
-            style={{ backgroundColor: colors.primary20 }}
-            title="Refresh dashboard"
-          >
-            <FiRefreshCw size={16} style={{ color: colors.primary }} />
-          </button>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div 
-          className="w-80 border-r shrink-0"
-          style={{ borderColor: colors.border }}
-        >
-          <PatientQueue
-            patients={patients}
-            selectedPatient={selectedPatient}
-            onPatientSelect={handlePatientSelect}
-            onQueueUpdate={loadInitialData}
-          />
+      {/* Main Content - Desktop and Mobile Layouts */}
+      <div className="flex-1 overflow-hidden">
+        {/* Desktop Layout (3-column) */}
+        <div className="hidden lg:flex h-full">
+          <div 
+            className="w-80 border-r shrink-0"
+            style={{ borderColor: colors.border }}
+          >
+            <PatientQueue
+              patients={patients}
+              selectedPatient={selectedPatient}
+              onPatientSelect={handlePatientSelect}
+              onQueueUpdate={loadInitialData}
+            />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <LiveEncounter
+              encounterData={encounterData}
+              selectedPatient={selectedPatient}
+              timelineData={timelineData}
+              onConsultationAction={loadInitialData}
+            />
+          </div>
+
+          <div 
+            className="w-96 border-l shrink-0"
+            style={{ borderColor: colors.border }}
+          >
+            <PatientHistory
+              selectedPatient={selectedPatient}
+            />
+          </div>
         </div>
 
-        <div className="flex-1 min-w-0">
-          <LiveEncounter
-            encounterData={encounterData}
-            selectedPatient={selectedPatient}
-            timelineData={timelineData}
-            onConsultationAction={loadInitialData}
-          />
-        </div>
-
-        <div 
-          className="w-96 border-l shrink-0"
-          style={{ borderColor: colors.border }}
-        >
-          <PatientHistory
-            selectedPatient={selectedPatient}
-          />
-        </div>
+        {/* Mobile Layout (Tab-based) */}
+        {renderMobileView()}
       </div>
 
       <div 
-        className="h-8 flex items-center justify-between px-6 text-xs border-t"
+        className="h-8 flex items-center justify-between px-4 sm:px-6 text-xs border-t"
         style={{ 
           backgroundColor: colors.surfaceSecondary,
           borderColor: colors.border,
           color: colors.textSecondary 
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <span>Status: {dashboardStats ? 'Online' : 'Loading...'}</span>
-          <span>Queue: {dashboardStats?.queue?.current_size || 0} active</span>
-          <span>Ready: {patients.filter(p => p.status === 'ready').length}</span>
-          <span>Total Patients: {dashboardStats?.patients?.total || 0}</span>
+          <span className="hidden sm:inline">Ready: {patients.filter(p => p.status === 'ready').length}</span>
+          <span>Total: {dashboardStats?.patients?.total || 0}</span>
         </div>
-        <div className="flex items-center gap-4">
-          <span>Backend Status: {dashboardStats ? 'Connected' : 'Loading...'}</span>
-          <span>Version: 1.0.0</span>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <span className="hidden sm:inline">Backend: {dashboardStats ? 'Connected' : 'Loading...'}</span>
+          <span>v1.0.0</span>
         </div>
       </div>
     </div>
