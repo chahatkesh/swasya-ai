@@ -7,36 +7,36 @@ const ImpactMetrics = () => {
     {
       id: 1,
       icon: FiClock,
-      number: "5 minutes",
-      description: "Average time saved per patient consultation",
+      number: "Time saving",
+      description: "Significantly reduce consultation preparation time with automation",
       alt: "Clock icon representing time savings"
     },
     {
       id: 2,
       icon: FiCheck,
-      number: "Zero paperwork",
-      description: "Digital records eliminate manual documentation",
+      number: "No paperwork",
+      description: "Completely eliminate manual documentation with digital record management",
       alt: "Check icon representing paperwork elimination"
     },
     {
       id: 3,
       icon: FiUsers,
-      number: "3 languages",
-      description: "Hindi, English, and regional language support",
+      number: "Multilingual",
+      description: "Support multiple languages including Hindi, English, and regional dialects",
       alt: "Users icon representing language support"
     },
     {
       id: 4,
       icon: FiTrendingUp,
-      number: "Better outcomes",
-      description: "Faster diagnosis with complete patient history",
+      number: "Faster",
+      description: "Achieve faster diagnosis with comprehensive patient history and insights",
       alt: "Trending up icon representing improved outcomes"
     }
   ];
 
   return (
     <section 
-      className="py-20 px-6" 
+      className="py-32 px-6" 
       style={{backgroundColor: colors.surfaceSecondary}}
     >
       <div className="max-w-6xl mx-auto">

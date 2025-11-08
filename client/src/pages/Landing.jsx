@@ -1,6 +1,7 @@
 import React from 'react'
 import { 
   Hero, 
+  AboutUs,
   HowItWorks, 
   CoreFeatures, 
   ImpactMetrics, 
@@ -12,6 +13,7 @@ const Landing = () => {
   return (
     <div className="min-h-screen">
       <Hero />
+      <AboutUs />
       <ImpactMetrics />
       <HowItWorks />
       <CoreFeatures />

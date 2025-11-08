@@ -69,7 +69,7 @@ const HowItWorks = () => {
         </div>
 
         {/* Steps List */}
-        <div className="space-y-1">
+        <div className="space-y-4">
           {steps.map((step, index) => {
             const IconComponent = step.icon;
             
