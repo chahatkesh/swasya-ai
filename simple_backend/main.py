@@ -6,8 +6,9 @@ Features: Queue Management, Groq Whisper, Gemini Vision, Organized Architecture
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import patients, queue, uploads, notes
+from app.routes import patients, queue, uploads, notes, documents
 from app.services.storage_service import storage
+from app.services.mongo_service import mongo_service
 import os
 from dotenv import load_dotenv
 
@@ -67,6 +68,7 @@ app.include_router(patients.router)
 app.include_router(queue.router)
 app.include_router(uploads.router)
 app.include_router(notes.router)
+app.include_router(documents.router)
 
 
 # ==================== ROOT ENDPOINT ====================
@@ -191,12 +193,15 @@ async def startup_event():
     print("="*60)
     print("✅ Storage initialized")
     print("✅ AI services configured (Groq + Gemini)")
+    print("🔄 Connecting to MongoDB...")
+    await mongo_service.connect()
     print("✅ Routes loaded:")
     print("   - /patients  (Patient Management)")
     print("   - /queue     (Queue Management)")
     print("   - /upload    (Audio & Image Processing)")
     print("   - /notes     (Medical Notes)")
     print("   - /history   (Prescription History)")
+    print("   - /documents (Multi-Document Timeline)")
     print("="*60)
     print("📚 API Documentation: http://localhost:8000/docs")
     print("="*60 + "\n")
@@ -206,6 +211,7 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown"""
     print("\n🛑 PHC AI Co-Pilot Backend shutting down...")
+    await mongo_service.disconnect()
 
 
 if __name__ == "__main__":
