@@ -101,7 +101,7 @@ aws dynamodb create-table \
   --key-schema \
     AttributeName=patient_id,KeyType=HASH \
   --billing-mode PAY_PER_REQUEST \
-  --region ap-south-1
+  --region eu-north-1
 ```
 
 **Explanation:**
