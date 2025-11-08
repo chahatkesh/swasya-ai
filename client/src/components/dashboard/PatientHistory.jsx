@@ -3,6 +3,7 @@ import { colors } from '../../utils/colors';
 import { FiUser, FiPhone, FiCalendar, FiActivity, FiClock, FiFileText, FiHeart, FiAlertCircle, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { CiPill } from "react-icons/ci";
 import { patientsAPI } from '../../utils/api';
+import { apiBaseUrl } from '../../utils/env';
 
 const PatientHistory = ({ selectedPatient }) => {
   const [timelineData, setTimelineData] = useState(null);
@@ -34,7 +35,7 @@ const PatientHistory = ({ selectedPatient }) => {
       // Fetch both timeline formats
       const [existingTimeline, documentTimeline] = await Promise.allSettled([
         patientsAPI.getTimeline(patientId),
-        fetch(`http://192.168.0.7:8000/documents/${patientId}/timeline`).then(r => r.json())
+        fetch(`${apiBaseUrl}/documents/${patientId}/timeline`).then(r => r.json())
       ]);
 
       if (existingTimeline.status === 'fulfilled') {

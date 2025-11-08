@@ -1,5 +1,7 @@
 // API utility functions for the Doctor Dashboard
-const BASE_URL = 'http://192.168.0.7:8000';
+import { apiBaseUrl } from './env';
+
+const BASE_URL = apiBaseUrl;
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
