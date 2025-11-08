@@ -1,6 +1,5 @@
 import React from 'react'
 import { colors } from '../../utils/colors'
-import { FiMail } from 'react-icons/fi'
 
 const Footer = () => {
 

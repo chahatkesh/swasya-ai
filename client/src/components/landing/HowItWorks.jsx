@@ -70,7 +70,7 @@ const HowItWorks = () => {
 
         {/* Steps List */}
         <div className="space-y-4">
-          {steps.map((step, index) => {
+          {steps.map((step) => {
             const IconComponent = step.icon;
             
             return (

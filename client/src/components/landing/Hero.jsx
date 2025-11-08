@@ -1,7 +1,14 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { colors } from '../../utils/colors'
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/dashboard');
+  };
+
   const buttonStyles = {
     primary: {
       backgroundColor: colors.primary,
@@ -76,6 +83,7 @@ const Hero = () => {
             <button 
               className="px-8 py-3 rounded-full text-base font-medium transition-colors duration-200"
               style={buttonStyles.primary}
+              onClick={handleGetStarted}
               onMouseEnter={(e) => handleButtonHover(e, 'primary')}
               onMouseLeave={(e) => handleButtonLeave(e, 'primary')}
             >
