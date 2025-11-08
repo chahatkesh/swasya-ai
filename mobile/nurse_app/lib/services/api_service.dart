@@ -7,8 +7,26 @@ import '../config.dart';
 class ApiService {
   // ==================== PATIENT MANAGEMENT ====================
   
-  /// Register a new patient
+  /// Check if UHID exists in the system
+  static Future<Map<String, dynamic>> checkUHID(String uhid) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${Config.patientsEndpoint}/check-uhid/$uhid'),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to check UHID: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error checking UHID: $e');
+    }
+  }
+  
+  /// Register a new patient with UHID
   static Future<Map<String, dynamic>> registerPatient({
+    required String uhid,
     required String name,
     required String phone,
     int? age,
@@ -19,6 +37,7 @@ class ApiService {
         Uri.parse(Config.patientsEndpoint),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
+          'uhid': uhid,
           'name': name,
           'phone': phone,
           if (age != null) 'age': age,
@@ -77,17 +96,23 @@ class ApiService {
 
   // ==================== QUEUE MANAGEMENT ====================
   
-  /// Add patient to queue
+  /// Add patient to queue (can use patient_id or uhid)
   static Future<Map<String, dynamic>> addToQueue({
-    required String patientId,
+    String? patientId,
+    String? uhid,
     String priority = 'normal', // 'normal' or 'urgent'
   }) async {
     try {
+      if (patientId == null && uhid == null) {
+        throw Exception('Must provide either patientId or uhid');
+      }
+      
       final response = await http.post(
         Uri.parse(Config.queueEndpoint),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'patient_id': patientId,
+          if (patientId != null) 'patient_id': patientId,
+          if (uhid != null) 'uhid': uhid,
           'priority': priority,
         }),
       );

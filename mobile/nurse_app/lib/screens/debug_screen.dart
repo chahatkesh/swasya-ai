@@ -66,7 +66,7 @@ class _DebugScreenState extends State<DebugScreen> {
         name: 'Test Patient ${DateTime.now().millisecondsSinceEpoch}',
         phone: '9876543210',
         age: 30,
-        gender: 'male',
+        gender: 'male', uhid: 'test-uhid',
       );
 
       setState(() {

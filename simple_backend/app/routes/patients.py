@@ -16,44 +16,107 @@ from typing import List
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
 
+@router.get("/check-uhid/{uhid}", response_model=dict)
+def check_uhid(uhid: str):
+    """
+    Check if a UHID (Unified Health ID) exists in the system
+    
+    **Use Case:**
+    - Nurse enters UHID on registration screen
+    - Backend checks if patient already exists
+    - If exists: Return patient data for auto-fill
+    - If not exists: Allow new registration
+    
+    **Path Parameters:**
+    - uhid: Government-issued Unified Health ID
+    
+    **Returns:**
+    - exists: Boolean indicating if UHID is found
+    - patient: Patient data if found (null if not found)
+    """
+    
+    patient = storage.get_patient_by_uhid(uhid)
+    
+    if patient:
+        print(f"✅ UHID {uhid} found - Patient: {patient.get('name')}")
+        return {
+            "success": True,
+            "exists": True,
+            "patient": patient,
+            "message": f"Welcome back, {patient.get('name')}!"
+        }
+    else:
+        print(f"ℹ️ UHID {uhid} not found - New patient")
+        return {
+            "success": True,
+            "exists": False,
+            "patient": None,
+            "message": "New patient - please complete registration"
+        }
+
+
 @router.post("", response_model=dict)
 def register_patient(patient: PatientCreate):
     """
-    Register a new patient
+    Register a new patient with UHID (Unified Health ID)
     
     **Request Body:**
+    - uhid: Government-issued Unified Health ID (REQUIRED)
     - name: Patient's full name
     - phone: 10-digit mobile number
     - age: Optional age
     - gender: Optional gender (male/female/other)
     
+    **Business Logic:**
+    1. Check if UHID already exists
+    2. If exists: Return error (409 Conflict)
+    3. If not exists: Create new patient record
+    
     **Returns:**
-    - patient_id: Unique identifier for the patient
+    - patient_id: Unique internal identifier
+    - uhid: Government Health ID
     - message: Success message
     """
     
-    # Generate unique patient ID
+    # Check if UHID already exists
+    existing_patient = storage.get_patient_by_uhid(patient.uhid)
+    if existing_patient:
+        print(f"❌ UHID {patient.uhid} already registered - Patient: {existing_patient.get('name')}")
+        raise HTTPException(
+            status_code=409,  # 409 Conflict
+            detail={
+                "error": "Patient already registered",
+                "message": f"UHID {patient.uhid} is already registered to {existing_patient.get('name')}",
+                "patient": existing_patient
+            }
+        )
+    
+    # Generate unique internal patient ID
     patient_id = f"PAT_{uuid.uuid4().hex[:8].upper()}"
     
     # Create patient data
     patient_data = {
         "patient_id": patient_id,
+        "uhid": patient.uhid,  # Government Health ID (PRIMARY KEY)
         "name": patient.name,
         "phone": patient.phone,
         "age": patient.age,
         "gender": patient.gender,
         "created_at": datetime.now().isoformat(),
+        "last_visit": datetime.now().isoformat(),
+        "visit_count": 1,
         "status": "active"
     }
     
     # Save to storage
     storage.create_patient(patient_id, patient_data)
     
-    print(f"✅ Registered: {patient_id} - {patient.name}")
+    print(f"✅ Registered: {patient_id} - UHID: {patient.uhid} - {patient.name}")
     
     return {
         "success": True,
         "patient_id": patient_id,
+        "uhid": patient.uhid,
         "message": f"Patient {patient.name} registered successfully"
     }
 
