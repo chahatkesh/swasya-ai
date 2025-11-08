@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'screens/patient_registration_screen.dart';
 
 void main() {
   runApp(const PHCNurseApp());
@@ -28,7 +29,8 @@ class NurseDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -72,9 +74,10 @@ class NurseDashboard extends StatelessWidget {
                 height: 56,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Patient Registration - Coming Soon!'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PatientRegistrationScreen(),
                       ),
                     );
                   },
@@ -90,74 +93,43 @@ class NurseDashboard extends StatelessWidget {
                 ),
               ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               
-              // Recent Patients Section
+              // Info Card
               Card(
-                child: ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.person),
-                  ),
-                  title: const Text('Recent Patients'),
-                  subtitle: const Text('No patients yet'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Patient List - Coming Soon!'),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.info_outline, color: Colors.blue),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Simple Testing Version',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 8),
+                      Text(
+                        'This app will:\n'
+                        '1. Register a patient\n'
+                        '2. Record audio conversation\n'
+                        '3. Scan prescription documents\n'
+                        '4. Upload to AWS for AI processing',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Quick Actions'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.mic),
-                    title: const Text('AI Scribe'),
-                    subtitle: const Text('Record conversation'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('AI Scribe - Coming Soon!')),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.camera_alt),
-                    title: const Text('AI Digitizer'),
-                    subtitle: const Text('Scan documents'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('AI Digitizer - Coming Soon!')),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                ),
-              ],
-            ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Quick Actions'),
       ),
     );
   }

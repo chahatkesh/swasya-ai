@@ -19,8 +19,15 @@ AWS_REGION = os.environ.get('AWS_REGION', 'eu-north-1')
 AUDIO_BUCKET = os.environ.get('AUDIO_BUCKET', 'phc-audio-uploads')
 IMAGE_BUCKET = os.environ.get('IMAGE_BUCKET', 'phc-image-uploads')
 
-# Initialize S3 client
-s3_client = boto3.client('s3', region_name=AWS_REGION)
+# Initialize S3 client with regional endpoint
+s3_client = boto3.client(
+    's3',
+    region_name=AWS_REGION,
+    config=boto3.session.Config(
+        signature_version='s3v4',
+        s3={'addressing_style': 'virtual'}
+    )
+)
 
 def lambda_handler(event, context):
     """
@@ -87,6 +94,7 @@ def lambda_handler(event, context):
         
         # Step 5: Generate presigned URL
         # This URL allows the mobile app to upload directly to S3
+        # Using regional endpoint to avoid 307 redirects
         presigned_url = s3_client.generate_presigned_url(
             'put_object',
             Params={
@@ -94,7 +102,8 @@ def lambda_handler(event, context):
                 'Key': file_key,
                 'ContentType': get_content_type(file_extension)
             },
-            ExpiresIn=300  # URL expires in 5 minutes (300 seconds)
+            ExpiresIn=300,  # URL expires in 5 minutes (300 seconds)
+            HttpMethod='PUT'
         )
         
         print(f"Generated presigned URL for {file_key}")

@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to the microphone to record patient conversations for AI transcription and medical documentation.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to the camera to scan prescription documents and medical records.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to upload prescription images.</string>
 </dict>
 </plist>
