@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/patients",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"name\": \"Test Patient\", \"phone\": \"9876543210\", \"age\": 45, \"gender\": \"M\"}"
+}

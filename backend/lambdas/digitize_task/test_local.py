@@ -7,6 +7,16 @@ import json
 import sys
 import os
 
+# Set environment variables for testing
+# IMPORTANT: Set your GEMINI_API_KEY before running:
+# export GEMINI_API_KEY="your-api-key-here"
+if 'GEMINI_API_KEY' not in os.environ:
+    print("❌ ERROR: GEMINI_API_KEY environment variable not set!")
+    print("Please run: export GEMINI_API_KEY='your-api-key-here'")
+    sys.exit(1)
+
+os.environ['AWS_REGION'] = os.environ.get('AWS_REGION', 'eu-north-1')
+
 sys.path.insert(0, os.path.dirname(__file__))
 from handler import structure_medical_data
 

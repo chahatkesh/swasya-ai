@@ -1,0 +1,302 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: PHC AI Co-Pilot - Serverless Backend for Healthcare Innovation
+
+# Parameters allow you to pass values during deployment
+Parameters:
+  GeminiApiKey:
+    Type: String
+    NoEcho: true
+    Description: Gemini API Key for AI processing
+    
+  AudioBucketName:
+    Type: String
+    Default: phc-audio-uploads
+    Description: S3 bucket name for audio files (must be globally unique)
+    
+  ImageBucketName:
+    Type: String
+    Default: phc-image-uploads
+    Description: S3 bucket name for image files (must be globally unique)
+
+# Global settings for all Lambda functions
+Globals:
+  Function:
+    Timeout: 300  # 5 minutes (for Transcribe/Textract processing)
+    Runtime: python3.12
+    MemorySize: 512
+    Environment:
+      Variables:
+        GEMINI_API_KEY: !Ref GeminiApiKey
+
+Resources:
+  #############################################################################
+  # DynamoDB Tables
+  #############################################################################
+  
+  PatientsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Patients
+      BillingMode: PAY_PER_REQUEST  # On-demand pricing (no capacity planning)
+      AttributeDefinitions:
+        - AttributeName: patient_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: patient_id
+          KeyType: HASH
+      Tags:
+        - Key: Project
+          Value: PHC-AI-Copilot
+
+  PatientNotesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PatientNotes
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: patient_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: patient_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE  # Enable streams for real-time updates
+      Tags:
+        - Key: Project
+          Value: PHC-AI-Copilot
+
+  PatientHistoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PatientHistory
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: patient_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: patient_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Project
+          Value: PHC-AI-Copilot
+
+  #############################################################################
+  # S3 Buckets
+  #############################################################################
+  
+  AudioUploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref AudioBucketName
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST]
+            AllowedOrigins: ['*']  # Restrict this in production
+            MaxAge: 3600
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt ScribeTaskFunction.Arn
+      Tags:
+        - Key: Project
+          Value: PHC-AI-Copilot
+
+  ImageUploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref ImageBucketName
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST]
+            AllowedOrigins: ['*']  # Restrict this in production
+            MaxAge: 3600
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt DigitizeTaskFunction.Arn
+      Tags:
+        - Key: Project
+          Value: PHC-AI-Copilot
+
+  #############################################################################
+  # Lambda Functions
+  #############################################################################
+
+  # Lambda 1: Patient Registration
+  PatientRegistrationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/patient_registration/
+      Handler: handler.lambda_handler
+      Description: Register new patients via mobile app
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PatientsTable
+      Events:
+        RegisterPatient:
+          Type: Api
+          Properties:
+            Path: /patients
+            Method: post
+            RestApiId: !Ref ApiGateway
+
+  # Lambda 2: Presigned URL Generator
+  PresignedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/presigned_url/
+      Handler: handler.lambda_handler
+      Description: Generate S3 presigned URLs for mobile uploads
+      Environment:
+        Variables:
+          AUDIO_BUCKET: !Ref AudioBucketName
+          IMAGE_BUCKET: !Ref ImageBucketName
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref AudioBucketName
+        - S3CrudPolicy:
+            BucketName: !Ref ImageBucketName
+      Events:
+        GetUploadUrl:
+          Type: Api
+          Properties:
+            Path: /upload-url
+            Method: post
+            RestApiId: !Ref ApiGateway
+
+  # Lambda 3: AI Scribe Task (Audio → Transcribe → Gemini)
+  ScribeTaskFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/scribe_task/
+      Handler: handler.lambda_handler
+      Description: Process audio files into SOAP notes
+      Timeout: 600  # 10 minutes (Transcribe can take time)
+      MemorySize: 1024
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref AudioBucketName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PatientNotesTable
+        - Statement:
+          - Effect: Allow
+            Action:
+              - transcribe:StartTranscriptionJob
+              - transcribe:GetTranscriptionJob
+            Resource: '*'
+
+  # Permission for S3 to invoke ScribeTask Lambda
+  ScribeTaskInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ScribeTaskFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${AudioBucketName}
+
+  # Lambda 4: AI Digitizer Task (Image → Textract → Gemini)
+  DigitizeTaskFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/digitize_task/
+      Handler: handler.lambda_handler
+      Description: Process scanned documents into structured data
+      Timeout: 600  # 10 minutes
+      MemorySize: 1024
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ImageBucketName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PatientHistoryTable
+        - Statement:
+          - Effect: Allow
+            Action:
+              - textract:AnalyzeDocument
+              - textract:DetectDocumentText
+            Resource: '*'
+
+  # Permission for S3 to invoke DigitizeTask Lambda
+  DigitizeTaskInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DigitizeTaskFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${ImageBucketName}
+
+  #############################################################################
+  # API Gateway
+  #############################################################################
+
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"  # Restrict this in production
+      Tags:
+        Project: PHC-AI-Copilot
+
+#############################################################################
+# Outputs - These values are displayed after deployment
+#############################################################################
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    
+  PatientRegistrationUrl:
+    Description: "POST /patients - Register new patient"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/patients"
+    
+  PresignedUrlEndpoint:
+    Description: "POST /upload-url - Get S3 upload URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/upload-url"
+    
+  AudioBucket:
+    Description: "S3 bucket for audio uploads"
+    Value: !Ref AudioUploadsBucket
+    
+  ImageBucket:
+    Description: "S3 bucket for image uploads"
+    Value: !Ref ImageUploadsBucket
+    
+  PatientsTableName:
+    Description: "DynamoDB Patients table"
+    Value: !Ref PatientsTable
+    
+  PatientNotesTableName:
+    Description: "DynamoDB PatientNotes table"
+    Value: !Ref PatientNotesTable
+    
+  PatientHistoryTableName:
+    Description: "DynamoDB PatientHistory table"
+    Value: !Ref PatientHistoryTable
