@@ -284,8 +284,17 @@ export const transformers = {
     const note = noteData.note;
     const soapNote = note.soap_note || {};
 
+    // Debug logging for chief complaint
+    console.log('🔍 Transform Debug:', {
+      noteId: note.note_id,
+      hasChiefComplaint: !!soapNote.chief_complaint,
+      chiefComplaint: soapNote.chief_complaint,
+      soapNoteKeys: Object.keys(soapNote)
+    });
+
     return {
       patientId: patientId,
+      chiefComplaint: soapNote.chief_complaint || null, // Fix: get from soap_note object
       scribeData: {
         noteId: note.note_id || null,
         rawTranscript: note.transcript || null,

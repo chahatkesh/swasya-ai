@@ -106,8 +106,8 @@ const PatientHistory = ({ selectedPatient }) => {
   return (
     <div className="h-full flex flex-col" style={{ backgroundColor: colors.surface }}>
       {/* Header */}
-      <div className="p-6 border-b" style={{ borderColor: colors.border }}>
-        <div className="flex items-center justify-between mb-4">
+      <div className="h-20 flex flex-col justify-center p-6 border-b" style={{ borderColor: colors.border }}>
+        <div className="flex items-center justify-between">
           <h2 className="text-xl font-medium" style={{ color: colors.textPrimary }}>
             Medical History
           </h2>
