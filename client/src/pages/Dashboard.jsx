@@ -5,7 +5,7 @@ import PatientQueue from '../components/dashboard/PatientQueue'
 import LiveEncounter from '../components/dashboard/LiveEncounter'
 import PatientHistory from '../components/dashboard/PatientHistory'
 import { patientsAPI, queueAPI, notesAPI, statsAPI, transformers, polling } from '../utils/api'
-import { FiRefreshCw, FiMap, FiSettings, FiUsers, FiActivity, FiFileText, FiMenu } from 'react-icons/fi'
+import { FiUsers, FiActivity, FiFileText, FiMenu } from 'react-icons/fi'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -246,7 +246,7 @@ const Dashboard = () => {
       >
         <div className="flex items-center gap-3 sm:gap-6">
           <h1 
-            className="text-lg sm:text-xl font-medium"
+            className="text-lg sm:text-xl font-ptserif font-medium"
             style={{ color: colors.textSecondary }}
           >
             Swasya AI
