@@ -7,7 +7,7 @@ Features: Queue Management, Groq Whisper, Gemini Vision, Organized Architecture
 from fastapi import FastAPI
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import patients, queue, uploads, notes, documents
+from app.routes import patients, queue, uploads, notes, documents, reports
 from app.services.storage_service import storage
 from app.services.mongo_service import mongo_service
 from app.services.mongodb_storage import mongodb_storage
@@ -71,6 +71,7 @@ app.include_router(queue.router)
 app.include_router(uploads.router)
 app.include_router(notes.router)
 app.include_router(documents.router)
+app.include_router(reports.router)
 
 
 # ==================== ROOT ENDPOINT ====================
