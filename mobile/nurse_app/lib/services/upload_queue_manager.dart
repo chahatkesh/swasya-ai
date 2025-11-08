@@ -309,24 +309,30 @@ class UploadQueueManager extends ChangeNotifier {
 
     _log('⏳ Waiting for uploads to complete before generating timeline...');
     
-    // Wait for all uploads to complete (check every second)
+    // Wait for ALL uploads to complete (check every second)
+    // Count tasks that are NOT completed (pending, uploading, paused, or failed)
     int waitCount = 0;
-    while (batch.pendingTasks > 0 && waitCount < 60) {  // Max 60 seconds wait
+    int notCompleted = batch.totalTasks - batch.completedTasks;
+    
+    while (notCompleted > 0 && waitCount < 60) {  // Max 60 seconds wait
       await Future.delayed(Duration(seconds: 1));
       waitCount++;
+      notCompleted = batch.totalTasks - batch.completedTasks;
+      
       if (waitCount % 5 == 0) {
-        _log('⏳ Still waiting... ${batch.pendingTasks} uploads pending (${waitCount}s)');
+        final uploading = batch.tasks.where((t) => t.status == UploadStatus.uploading).length;
+        _log('⏳ Still waiting... ${notCompleted} uploads not completed (${waitCount}s) - Pending: ${batch.pendingTasks}, Uploading: ${uploading}');
       }
     }
 
-    if (batch.pendingTasks > 0) {
+    if (notCompleted > 0) {
       _log('⚠️ Timeout waiting for uploads. Generating timeline with ${batch.completedTasks} documents anyway.');
     }
 
     // Check if all tasks are completed
-    final incompleteTasks = batch.tasks.where((t) => t.status != UploadStatus.completed).toList();
-    if (incompleteTasks.isNotEmpty) {
-      _log('⚠️ Batch has ${incompleteTasks.length} incomplete tasks');
+    final incompleteTasksList = batch.tasks.where((t) => t.status != UploadStatus.completed).toList();
+    if (incompleteTasksList.isNotEmpty) {
+      _log('⚠️ Batch has ${incompleteTasksList.length} incomplete tasks');
       _log('   Pending: ${batch.pendingTasks}, Failed: ${batch.failedTasks}');
     }
 

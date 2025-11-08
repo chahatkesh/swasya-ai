@@ -43,6 +43,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       final notesResponse = await ApiService.getSoapNotes(widget.patientId);
       final historyResponse = await ApiService.getPatientHistory(widget.patientId);
       
+      if (!mounted) return; // Check if widget is still mounted before setState
+      
       setState(() {
         _patientData = {
           'patient_id': widget.patientId,
@@ -58,6 +60,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       print('✅ [PatientDetail] Loaded: ${_patientData!['notes_count']} notes, ${_patientData!['history_count']} history items');
     } catch (e) {
       print('❌ [PatientDetail] Failed to load: $e');
+      
+      if (!mounted) return; // Check if widget is still mounted before setState
+      
       setState(() {
         _error = e.toString();
         _isLoading = false;

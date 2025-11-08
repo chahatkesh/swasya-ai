@@ -74,5 +74,44 @@
       "event_count": 1,
       "current_medications_count": 2
     }
+  ],
+  "PAT_3BDEC021": [
+    {
+      "history_id": "TIMELINE_F2FFFE1B",
+      "patient_id": "PAT_3BDEC021",
+      "created_at": "2025-11-08T14:02:13.722666",
+      "batch_id": "BATCH_C1B7D109",
+      "type": "comprehensive_timeline",
+      "document_count": 1,
+      "timeline_summary": "Vatsal, a 19-year-old, was diagnosed with diabetes (level 400+) and hypertension (125 mmHg) on November 2, 2023. He was prescribed Tripride-2-forte (250mg) and Lipikind-10 (10mg), but the frequency and duration of these medications are currently unknown and need clarification from the prescribing doctor.",
+      "event_count": 2,
+      "current_medications_count": 2
+    }
+  ],
+  "PAT_011738E0": [
+    {
+      "history_id": "TIMELINE_604F9502",
+      "patient_id": "PAT_011738E0",
+      "created_at": "2025-11-08T14:09:56.979472",
+      "batch_id": "BATCH_3FFA64E0",
+      "type": "comprehensive_timeline",
+      "document_count": 1,
+      "timeline_summary": "Patient Rishi10, age 19, was diagnosed with diabetes (blood glucose level of 400+) and high blood pressure (125 mmHg) on November 2nd, 2023. The patient has been prescribed Tripride 2 forte (250mg) and Lipikind-10 (10mg); however, the frequency and duration of these medications is not specified.",
+      "event_count": 1,
+      "current_medications_count": 2
+    }
+  ],
+  "PAT_CCC7966E": [
+    {
+      "history_id": "TIMELINE_048CA6A9",
+      "patient_id": "PAT_CCC7966E",
+      "created_at": "2025-11-08T14:18:13.670595",
+      "batch_id": "BATCH_09898029",
+      "type": "comprehensive_timeline",
+      "document_count": 2,
+      "timeline_summary": "Chahat, a 37-year-old patient, has been diagnosed with diabetes (high blood sugar levels) and is being treated for it. She also experiences lower back pain and has a small damage in L1, L3 spine, for which she is also receiving medication.",
+      "event_count": 2,
+      "current_medications_count": 5
+    }
   ]
 }

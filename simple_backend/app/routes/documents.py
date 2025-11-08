@@ -93,6 +93,11 @@ async def upload_document_to_batch(
     - Max size: 10MB
     """
     
+    print(f"\n🔍 [UPLOAD] Received upload request:")
+    print(f"   Patient ID: {patient_id}")
+    print(f"   Batch ID param: {batch_id}")
+    print(f"   Filename: {file.filename}")
+    
     # Verify patient exists
     patient = storage.get_patient(patient_id)
     if not patient:
@@ -100,10 +105,12 @@ async def upload_document_to_batch(
     
     # Get or create batch
     if not batch_id:
+        print(f"⚠️ [UPLOAD] No batch_id provided, looking for active batch...")
         # Try to get active batch
         existing_batch = await mongo_service.get_active_batch(patient_id)
         if existing_batch:
             batch_id = existing_batch['batch_id']
+            print(f"✅ [UPLOAD] Found active batch: {batch_id}")
         else:
             # Create new batch
             batch_id = f"BATCH_{uuid.uuid4().hex[:8].upper()}"
@@ -116,6 +123,9 @@ async def upload_document_to_batch(
                 "created_at": datetime.now().isoformat()
             }
             await mongo_service.create_batch(batch_data)
+            print(f"🆕 [UPLOAD] Created new batch: {batch_id}")
+    else:
+        print(f"✅ [UPLOAD] Using provided batch_id: {batch_id}")
     
     # Validate file type
     file_extension = file.filename.split('.')[-1].lower()

@@ -118,10 +118,24 @@ class _CameraScreenState extends State<CameraScreen> {
     }
 
     _isUploading = true;
+    final imagePath = _imageFile!.path;
+    final imageFileName = imagePath.split('/').last;
+    
     print('📤 [CameraScreen] Adding image to upload queue...');
+    print('   Image file: $imageFileName');
+    print('   Batch ID: $_batchId');
+    print('   Current document count: $_documentCount');
     
     try {
-      final file = File(_imageFile!.path);
+      final file = File(imagePath);
+      
+      if (!await file.exists()) {
+        print('❌ [CameraScreen] File does not exist: $imagePath');
+        throw Exception('Image file not found');
+      }
+      
+      final fileSize = await file.length();
+      print('   File size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
       
       // Add to queue - this is NON-BLOCKING!
       final taskId = _queueManager.addToQueue(
@@ -131,12 +145,15 @@ class _CameraScreenState extends State<CameraScreen> {
       );
 
       print('✅ [CameraScreen] Added to queue with task ID: $taskId');
+      print('   Queue now has ${_queueManager.queue.length} tasks');
 
       setState(() {
         _documentCount++;
         _imageFile = null; // Clear immediately for next scan
         _isUploading = false; // Re-enable upload button
       });
+
+      print('📊 [CameraScreen] Document count incremented to: $_documentCount');
 
       if (!mounted) return;
 
