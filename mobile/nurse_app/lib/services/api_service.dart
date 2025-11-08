@@ -41,6 +41,11 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse(Config.patientsEndpoint),
+      ).timeout(
+        const Duration(seconds: 10), // Add 10s timeout
+        onTimeout: () {
+          throw Exception('Request timed out after 10 seconds');
+        },
       );
 
       if (response.statusCode == 200) {

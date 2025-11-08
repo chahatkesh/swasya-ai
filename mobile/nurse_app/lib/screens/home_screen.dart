@@ -14,6 +14,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _patients = [];
   bool _isLoading = true;
+  bool _isRefreshing = false; // Track silent background refresh
   String? _error;
   final UploadQueueManager _queueManager = UploadQueueManager();
 
@@ -38,21 +39,39 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadTodaysPatients() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  Future<void> _loadTodaysPatients({bool silent = false}) async {
+    // Silent mode: refresh in background without showing loading spinner
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    } else {
+      // Show subtle refresh indicator for silent updates
+      setState(() {
+        _isRefreshing = true;
+      });
+    }
 
     try {
-      print('📥 [HomeScreen] Fetching today\'s patient queue...');
+      final startTime = DateTime.now();
+      print('📥 [HomeScreen] Fetching today\'s patient queue... ${silent ? "(silent background refresh)" : ""}');
+      print('   ⏱️ Request started at: ${startTime.hour}:${startTime.minute}:${startTime.second}');
       
       // Fetch all patients (queue endpoint might be empty)
       final response = await ApiService.getAllPatients();
       
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+      print('   ⏱️ Response received at: ${endTime.hour}:${endTime.minute}:${endTime.second}');
+      print('   ⏱️ API call took: ${duration.inSeconds}s ${duration.inMilliseconds % 1000}ms');
+      
+      if (!mounted) return; // Check if widget is still mounted
+      
       setState(() {
         _patients = List<Map<String, dynamic>>.from(response['patients'] ?? []);
         _isLoading = false;
+        _isRefreshing = false;
       });
       
       print('✅ [HomeScreen] Loaded ${_patients.length} patients');
@@ -65,9 +84,12 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       print('❌ [HomeScreen] Failed to load patients: $e');
+      if (!mounted) return; // Check if widget is still mounted
+      
       setState(() {
         _error = e.toString();
         _isLoading = false;
+        _isRefreshing = false;
       });
     }
   }
@@ -177,9 +199,12 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       // Refresh the full list in background after a short delay (won't block UI)
+      // Use silent=true to keep showing current list while refreshing
       Future.delayed(const Duration(seconds: 2), () {
-        print('🔁 [HomeScreen] Performing background refresh of patient list');
-        _loadTodaysPatients();
+        if (mounted) {
+          print('🔁 [HomeScreen] Performing silent background refresh of patient list');
+          _loadTodaysPatients(silent: true);
+        }
       });
     });
   }
@@ -215,6 +240,16 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: 'Refresh',
           ),
         ],
+        // Show subtle progress bar when refreshing silently in background
+        bottom: _isRefreshing
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(3.0),
+                child: const LinearProgressIndicator(
+                  backgroundColor: Colors.blue,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : null,
       ),
       body: _isLoading
           ? Center(

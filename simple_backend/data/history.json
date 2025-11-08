@@ -113,5 +113,18 @@
       "event_count": 2,
       "current_medications_count": 5
     }
+  ],
+  "PAT_E755959E": [
+    {
+      "history_id": "TIMELINE_ABA2C421",
+      "patient_id": "PAT_E755959E",
+      "created_at": "2025-11-08T14:36:59.897922",
+      "batch_id": "BATCH_6221DA03",
+      "type": "comprehensive_timeline",
+      "document_count": 2,
+      "timeline_summary": "Chahat2 is a 19-year-old patient with a recent diagnosis of diabetes, indicated by a high glucose level. The patient also suffers from lower back pain, with evidence of minor spinal damage at L1 and L3, and is currently being treated for it.",
+      "event_count": 2,
+      "current_medications_count": 5
+    }
   ]
 }

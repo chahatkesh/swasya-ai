@@ -67,7 +67,14 @@ def list_patients():
     - count: Total number of patients
     - patients: List of all patient records
     """
+    import time
+    start = time.time()
+    print(f"📋 [API] GET /patients - Request received")
+    
     patients = storage.get_all_patients()
+    
+    elapsed = (time.time() - start) * 1000
+    print(f"📋 [API] GET /patients - Returning {len(patients)} patients in {elapsed:.2f}ms")
     
     return {
         "success": True,
