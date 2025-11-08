@@ -76,12 +76,15 @@ async def upload_audio(patient_id: str, file: UploadFile = File(...)):
     
     print(f"✅ SOAP note saved\n")
     
+    # Remove error field from response if present (don't expose to user)
+    response_soap = {k: v for k, v in soap_note.items() if k != 'error'}
+    
     return {
         "success": True,
         "message": "Audio processed successfully",
         "patient_id": patient_id,
         "transcript": transcript,
-        "soap_note": soap_note
+        "soap_note": response_soap
     }
 
 
@@ -144,11 +147,14 @@ async def upload_image(patient_id: str, file: UploadFile = File(...)):
     
     print(f"✅ Prescription extracted\n")
     
+    # Remove error field from response if present (don't expose to user)
+    response_prescription = {k: v for k, v in prescription_data.items() if k != 'error'}
+    
     return {
         "success": True,
         "message": "Prescription extracted successfully",
         "patient_id": patient_id,
-        "prescription": prescription_data
+        "prescription": response_prescription
     }
 
 
