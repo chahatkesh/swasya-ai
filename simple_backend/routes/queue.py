@@ -37,7 +37,7 @@ def add_to_queue(entry: QueueEntry):
     queue.append(queue_entry)
     save_json(QUEUE_FILE, queue)
     
-    print(f"📋 Added to queue: {entry.patient_id}")
+    print(f"📋 Patient added to queue")
     
     return {
         "success": True,

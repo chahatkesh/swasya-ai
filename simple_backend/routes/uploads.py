@@ -2,6 +2,9 @@
 
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from datetime import datetime
+import os
+import re
+from pathlib import Path
 from utils.storage import load_json, save_json
 from utils.ai_services import transcribe_audio, generate_soap_note, extract_prescription
 from config import PATIENTS_FILE, NOTES_FILE, UPLOADS_DIR
@@ -17,12 +20,27 @@ async def upload_audio(patient_id: str, file: UploadFile = File(...)):
     if patient_id not in patients:
         raise HTTPException(status_code=404, detail="Patient not found")
     
-    print(f"\n📤 Audio upload: {patient_id} - {file.filename}")
+    print(f"\n📤 Audio upload received")
     
     # Save audio file
     timestamp = int(datetime.now().timestamp())
-    file_ext = file.filename.split('.')[-1]
-    file_path = f"{UPLOADS_DIR}/{patient_id}_audio_{timestamp}.{file_ext}"
+    # Sanitize file extension to prevent path traversal
+    file_ext = file.filename.split('.')[-1].lower()
+    allowed_extensions = ['mp3', 'wav', 'm4a', 'ogg', 'webm']
+    if file_ext not in allowed_extensions:
+        raise HTTPException(status_code=400, detail="Invalid file format")
+    
+    # Sanitize patient_id to prevent path injection
+    if not re.match(r'^PAT_[A-Z0-9]+$', patient_id):
+        raise HTTPException(status_code=400, detail="Invalid patient ID format")
+    
+    # Construct safe file path
+    safe_filename = f"{patient_id}_audio_{timestamp}.{file_ext}"
+    file_path = os.path.join(UPLOADS_DIR, safe_filename)
+    
+    # Verify the path is within UPLOADS_DIR (prevent directory traversal)
+    if not Path(file_path).resolve().is_relative_to(Path(UPLOADS_DIR).resolve()):
+        raise HTTPException(status_code=400, detail="Invalid file path")
     
     with open(file_path, "wb") as f:
         content = await file.read()
@@ -75,12 +93,27 @@ async def upload_image(patient_id: str, file: UploadFile = File(...)):
     if patient_id not in patients:
         raise HTTPException(status_code=404, detail="Patient not found")
     
-    print(f"\n📤 Image upload: {patient_id} - {file.filename}")
+    print(f"\n📤 Image upload received")
     
     # Save image file
     timestamp = int(datetime.now().timestamp())
-    file_ext = file.filename.split('.')[-1]
-    file_path = f"{UPLOADS_DIR}/{patient_id}_image_{timestamp}.{file_ext}"
+    # Sanitize file extension to prevent path traversal
+    file_ext = file.filename.split('.')[-1].lower()
+    allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
+    if file_ext not in allowed_extensions:
+        raise HTTPException(status_code=400, detail="Invalid file format")
+    
+    # Sanitize patient_id to prevent path injection
+    if not re.match(r'^PAT_[A-Z0-9]+$', patient_id):
+        raise HTTPException(status_code=400, detail="Invalid patient ID format")
+    
+    # Construct safe file path
+    safe_filename = f"{patient_id}_image_{timestamp}.{file_ext}"
+    file_path = os.path.join(UPLOADS_DIR, safe_filename)
+    
+    # Verify the path is within UPLOADS_DIR (prevent directory traversal)
+    if not Path(file_path).resolve().is_relative_to(Path(UPLOADS_DIR).resolve()):
+        raise HTTPException(status_code=400, detail="Invalid file path")
     
     with open(file_path, "wb") as f:
         content = await file.read()
