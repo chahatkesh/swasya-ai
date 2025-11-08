@@ -4,6 +4,7 @@ Notes and History routes
 
 from fastapi import APIRouter, HTTPException
 from app.services.storage_service import storage
+from datetime import datetime
 
 router = APIRouter(tags=["Notes & History"])
 
@@ -198,5 +199,89 @@ def get_patient_summary(patient_id: str):
         "latest_visit": latest_note,
         "chief_complaints": chief_complaints,
         "recent_medications": list(set(recent_meds))  # Unique medications
+    }
+
+
+@router.get("/timeline/{patient_id}", response_model=dict)
+def get_medical_timeline(patient_id: str):
+    """
+    Get complete medical timeline for a patient
+    
+    Combines SOAP notes and prescription history in chronological order.
+    Each entry is tagged with type (note/prescription) and timestamp.
+    
+    **Ideal for doctor dashboard - shows complete patient journey**
+    
+    **Path Parameters:**
+    - patient_id: Patient's unique identifier
+    
+    **Returns:**
+    Timeline with entries sorted by date (newest first):
+    - type: "note" or "prescription"
+    - date: ISO timestamp
+    - content: Full data object
+    """
+    
+    patient = storage.get_patient(patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
+    
+    notes = storage.get_patient_notes(patient_id)
+    history = storage.get_patient_history(patient_id)
+    
+    # Build timeline
+    timeline = []
+    
+    # Add notes to timeline
+    for note in notes:
+        timeline.append({
+            "type": "note",
+            "date": note.get('created_at'),
+            "timestamp": note.get('created_at'),
+            "entry": {
+                "note_id": note.get('note_id'),
+                "audio_file": note.get('audio_file'),
+                "soap_note": note.get('soap_note', {}),
+                "chief_complaint": note.get('soap_note', {}).get('chief_complaint', 'Not specified'),
+                "assessment": note.get('soap_note', {}).get('assessment', 'Not specified'),
+                "plan": note.get('soap_note', {}).get('plan', 'Not specified')
+            }
+        })
+    
+    # Add prescriptions to timeline
+    for hist in history:
+        prescription = hist.get('prescription_data', {})
+        timeline.append({
+            "type": "prescription",
+            "date": hist.get('created_at'),
+            "timestamp": hist.get('created_at'),
+            "entry": {
+                "history_id": hist.get('history_id'),
+                "image_file": hist.get('image_file'),
+                "doctor_name": prescription.get('doctor_name', 'Unknown'),
+                "hospital": prescription.get('hospital', 'Not specified'),
+                "diagnosis": prescription.get('diagnosis', 'Not specified'),
+                "medications": prescription.get('medications', []),
+                "medication_count": len(prescription.get('medications', []))
+            }
+        })
+    
+    # Sort by timestamp (newest first)
+    timeline.sort(key=lambda x: x['timestamp'], reverse=True)
+    
+    return {
+        "success": True,
+        "patient_id": patient_id,
+        "patient_name": patient['name'],
+        "timeline": timeline,
+        "statistics": {
+            "total_entries": len(timeline),
+            "notes_count": len(notes),
+            "prescriptions_count": len(history),
+            "date_range": {
+                "first_entry": timeline[-1]['date'] if timeline else None,
+                "latest_entry": timeline[0]['date'] if timeline else None
+            }
+        }
     }
  

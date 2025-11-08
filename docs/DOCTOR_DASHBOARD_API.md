@@ -12,6 +12,25 @@ All responses follow this format:
 
 ---
 
+## IMPORTANT NOTES
+
+### Queue Management
+- Queue will be empty initially. Patients must be added to queue via nurse app or POST endpoint.
+- Use `POST /queue` to add patients before testing queue endpoints.
+- Queue IDs are generated dynamically (format: `Q_XXXXXXXX`).
+
+### HTTP Methods
+- GET endpoints: Retrieve data (no body needed)
+- POST endpoints: Create/update (requires JSON body)
+- Use `-X POST` with curl for POST requests
+
+### Common Issues
+1. **Empty queue response**: No patients in queue yet. Add patient first with `POST /queue`.
+2. **Method Not Allowed**: Using GET instead of POST, or vice versa.
+3. **404 Not Found**: Patient ID or Queue ID doesn't exist in system.
+
+---
+
 ## Patient Management
 
 ### 1. List All Patients
@@ -361,9 +380,82 @@ All responses follow this format:
 
 ---
 
+### 12. Get Complete Medical Timeline (RECOMMENDED FOR DOCTOR DASHBOARD)
+**Endpoint:** `GET /timeline/{patient_id}`
+
+**Description:** Combines all SOAP notes and prescription history in chronological order
+
+**Response:**
+```json
+{
+  "success": true,
+  "patient_id": "PAT_72D90B86",
+  "patient_name": "Test Patient",
+  "timeline": [
+    {
+      "type": "note",
+      "date": "2025-11-08T15:30:39.547501",
+      "timestamp": "2025-11-08T15:30:39.547501",
+      "entry": {
+        "note_id": "NOTE_410F1325",
+        "audio_file": "PAT_72D90B86_audio_06195061.m4a",
+        "soap_note": {
+          "subjective": "Patient reports fever for four days...",
+          "objective": "No objective findings recorded...",
+          "assessment": "Fever of unknown origin (4 days duration).",
+          "plan": "Further evaluation needed...",
+          "chief_complaint": "Fever for four days.",
+          "medications": []
+        },
+        "chief_complaint": "Fever for four days.",
+        "assessment": "Fever of unknown origin (4 days duration).",
+        "plan": "Further evaluation needed..."
+      }
+    },
+    {
+      "type": "prescription",
+      "date": "2025-11-08T13:11:41.233184",
+      "timestamp": "2025-11-08T13:11:41.233184",
+      "entry": {
+        "history_id": "TIMELINE_8F4524E3",
+        "image_file": "PAT_72D90B86_doc_1234.jpg",
+        "doctor_name": "Dr. Sharma",
+        "hospital": "City Hospital",
+        "diagnosis": "Hypertension",
+        "medications": [
+          {
+            "name": "Amlodipine",
+            "dosage": "5mg",
+            "frequency": "Once daily"
+          }
+        ],
+        "medication_count": 1
+      }
+    }
+  ],
+  "statistics": {
+    "total_entries": 4,
+    "notes_count": 3,
+    "prescriptions_count": 1,
+    "date_range": {
+      "first_entry": "2025-11-08T13:11:41.233184",
+      "latest_entry": "2025-11-08T15:30:39.547501"
+    }
+  }
+}
+```
+
+**Use for:** 
+- Complete patient history view
+- Chronological medical journey
+- Doctor's main patient consultation screen
+- Single API call for all patient medical data
+
+---
+
 ## Prescription History
 
-### 12. Get All Prescription History
+### 13. Get All Prescription History
 **Endpoint:** `GET /history/{patient_id}`
 
 **Response:**
@@ -402,7 +494,7 @@ All responses follow this format:
 
 ---
 
-### 13. Get All Medications Timeline
+### 14. Get All Medications Timeline
 **Endpoint:** `GET /history/{patient_id}/medications`
 
 **Response:**
@@ -443,7 +535,7 @@ All responses follow this format:
 
 ## System Statistics
 
-### 14. Dashboard Statistics
+### 15. Dashboard Statistics
 **Endpoint:** `GET /stats`
 
 **Response:**
@@ -557,17 +649,60 @@ curl http://192.168.0.7:8000/patients
 # Get queue status
 curl http://192.168.0.7:8000/queue
 
+# Add patient to queue (MUST USE -X POST)
+curl -X POST http://192.168.0.7:8000/queue \
+  -H "Content-Type: application/json" \
+  -d '{"patient_id":"PAT_A6C5DC51","priority":"normal"}'
+
 # Get patient details
 curl http://192.168.0.7:8000/patients/PAT_A6C5DC51
+
+# Get patient medical timeline (RECOMMENDED)
+curl http://192.168.0.7:8000/timeline/PAT_A6C5DC51
 
 # Get latest note
 curl http://192.168.0.7:8000/notes/PAT_A6C5DC51/latest
 
-# Start consultation
+# Start consultation (MUST USE -X POST and valid queue_id)
 curl -X POST http://192.168.0.7:8000/queue/Q_9A8B7C6D/start
 
-# Complete consultation
+# Complete consultation (MUST USE -X POST)
 curl -X POST http://192.168.0.7:8000/queue/Q_9A8B7C6D/complete
+
+# Get system stats
+curl http://192.168.0.7:8000/stats
+```
+
+---
+
+## Complete Workflow Example
+
+1. **Check current queue:**
+```bash
+curl http://192.168.0.7:8000/queue
+```
+
+2. **Add patient to queue:**
+```bash
+curl -X POST http://192.168.0.7:8000/queue \
+  -H "Content-Type: application/json" \
+  -d '{"patient_id":"PAT_72D90B86","priority":"normal"}'
+# Returns: {"queue_id":"Q_57A417A0",...}
+```
+
+3. **Start consultation (use queue_id from step 2):**
+```bash
+curl -X POST http://192.168.0.7:8000/queue/Q_57A417A0/start
+```
+
+4. **Get patient timeline:**
+```bash
+curl http://192.168.0.7:8000/timeline/PAT_72D90B86
+```
+
+5. **Complete consultation:**
+```bash
+curl -X POST http://192.168.0.7:8000/queue/Q_57A417A0/complete
 ```
 
 ---

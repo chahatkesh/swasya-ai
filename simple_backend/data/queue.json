@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "queue_id": "Q_57A417A0",
+    "patient_id": "PAT_72D90B86",
+    "patient_name": "Test Patient",
+    "token_number": 1,
+    "priority": "normal",
+    "status": "completed",
+    "added_at": "2025-11-08T16:17:46.692931",
+    "started_at": "2025-11-08T16:18:12.846121",
+    "completed_at": "2025-11-08T16:22:08.531451"
+  }
+]
