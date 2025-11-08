@@ -1,73 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { colors } from '../utils/colors';
-import PatientQueue from '../components/dashboard/PatientQueue';
-import LiveEncounter from '../components/dashboard/LiveEncounter';
-import PatientHistory from '../components/dashboard/PatientHistory';
-import { 
-  mockPatients, 
-  mockEncounterData, 
-  mockPatientHistory, 
-  mockAIAnalysis 
-} from '../data/mockData';
-import { FiRefreshCw, FiSettings, FiLogOut } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback } from 'react'
+import { colors } from '../utils/colors'
+import PatientQueue from '../components/dashboard/PatientQueue'
+import LiveEncounter from '../components/dashboard/LiveEncounter'
+import PatientHistory from '../components/dashboard/PatientHistory'
+import { patientsAPI, queueAPI, notesAPI, statsAPI, transformers, polling } from '../utils/api'
+import { FiRefreshCw } from 'react-icons/fi'
 
 const Dashboard = () => {
-  const [patients, setPatients] = useState(mockPatients);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [encounterData, setEncounterData] = useState(null);
-  const [patientHistory, setPatientHistory] = useState(null);
-  const [aiAnalysis, setAiAnalysis] = useState(null);
-  const [lastRefresh, setLastRefresh] = useState(new Date());
-
-  // Simulate real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPatients(prevPatients => 
-        prevPatients.map(patient => ({
-          ...patient,
-          lastUpdated: new Date()
-        }))
-      );
-      setLastRefresh(new Date());
-    }, 30000); // Update every 30 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handlePatientSelect = (patient) => {
-    setSelectedPatient(patient);
-    
-    // Load encounter data if patient is ready
-    if (patient.status === 'ready' || patient.status === 'completed') {
-      setEncounterData({
-        ...mockEncounterData,
-        patientId: patient.id
-      });
-      setPatientHistory({
-        ...mockPatientHistory,
-        patientId: patient.id,
-        personalInfo: {
-          ...mockPatientHistory.personalInfo,
-          name: patient.name,
-          age: patient.age,
-          gender: patient.gender === 'M' ? 'Male' : 'Female',
-          uhid: patient.uhid,
-          contact: patient.mobile
-        }
-      });
-      setAiAnalysis(mockAIAnalysis);
-    } else {
-      setEncounterData(null);
-      setPatientHistory(null);
-      setAiAnalysis(null);
-    }
-  };
-
-  const handleRefresh = () => {
-    setLastRefresh(new Date());
-    // In a real app, this would fetch fresh data from the API
-    console.log('Refreshing dashboard data...');
-  };
+  const [patients, setPatients] = useState([])
+  const [selectedPatient, setSelectedPatient] = useState(null)
+  const [encounterData, setEncounterData] = useState(null)
+  const [timelineData, setTimelineData] = useState(null)
+  const [lastRefresh, setLastRefresh] = useState(new Date())
+  const [loading, setLoading] = useState(true)
+  const [dashboardStats, setDashboardStats] = useState(null)
 
   const formatTime = (date) => {
     return date.toLocaleTimeString('en-US', {
@@ -75,15 +21,122 @@ const Dashboard = () => {
       minute: '2-digit',
       second: '2-digit',
       hour12: true
-    });
-  };
+    })
+  }
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      setLoading(true)
+      
+      const [patientsData, queueData, statsData] = await Promise.all([
+        patientsAPI.getAll(),
+        queueAPI.getCurrent(),
+        statsAPI.get()
+      ])
+
+      const transformedPatients = patientsData.patients.map(transformers.transformPatient)
+      const updatedPatients = updatePatientsWithQueueData(transformedPatients, queueData.queue)
+      
+      setPatients(updatedPatients)
+      setDashboardStats(statsData)
+      setLastRefresh(new Date())
+    } catch (error) {
+      console.error('Error loading initial data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const updatePatientsWithQueueData = (patients, queueEntries) => {
+    return patients.map(patient => {
+      const queueEntry = queueEntries.find(q => q.patient_id === patient.id)
+      if (queueEntry) {
+        const transformedQueue = transformers.transformQueueEntry(queueEntry)
+        return {
+          ...patient,
+          status: transformedQueue.status,
+          queueNumber: transformedQueue.tokenNumber,
+          queueId: transformedQueue.queueId
+        }
+      }
+      return patient
+    })
+  }
+
+  const handleQueueUpdate = useCallback((queueData) => {
+    setPatients(prevPatients => 
+      updatePatientsWithQueueData(prevPatients, queueData.queue)
+    )
+    setLastRefresh(new Date())
+  }, [])
+
+  useEffect(() => {
+    loadInitialData()
+  }, [loadInitialData])
+
+  useEffect(() => {
+    const queueId = polling.startQueuePolling(handleQueueUpdate, 5000)
+    return () => polling.stop(queueId)
+  }, [handleQueueUpdate])
+
+  const handlePatientSelect = async (patient) => {
+    setSelectedPatient(patient)
+    
+    // Load encounter data and timeline for the LiveEncounter component
+    try {
+      const [latestNote, timeline] = await Promise.all([
+        notesAPI.getLatest(patient.id).catch(() => null),
+        patientsAPI.getTimeline(patient.id).catch(() => null)
+      ])
+
+      // Load current encounter data if available
+      if (latestNote && latestNote.success) {
+        const encounterData = transformers.transformEncounterData(latestNote, patient.id)
+        setEncounterData(encounterData)
+      } else {
+        setEncounterData(null)
+      }
+
+      // Load timeline data for historical SOAP notes
+      if (timeline && timeline.success) {
+        setTimelineData(timeline)
+      } else {
+        setTimelineData(null)
+      }
+
+    } catch (error) {
+      console.error('Error loading patient encounter data:', error)
+      setEncounterData(null)
+      setTimelineData(null)
+    }
+  }
+
+  const handleRefresh = async () => {
+    await loadInitialData()
+  }
+
+  if (loading) {
+    return (
+      <div 
+        className="h-screen flex items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <div className="text-center">
+          <div 
+            className="w-16 h-16 border-4 border-t-transparent border-solid rounded-full animate-spin mx-auto mb-4"
+            style={{ borderColor: colors.primary }}
+          />
+          <p style={{ color: colors.textPrimary }}>Loading Dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div 
       className="h-screen flex flex-col"
       style={{ backgroundColor: colors.background }}
     >
-      {/* Top Navigation Bar */}
       <div 
         className="h-16 flex items-center justify-between px-6 border-b"
         style={{ 
@@ -145,10 +198,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Main Dashboard Layout - 3 Column Cockpit */}
       <div className="flex-1 flex overflow-hidden">
-        
-        {/* Column 1: Patient Queue (Left) */}
         <div 
           className="w-80 border-r shrink-0"
           style={{ borderColor: colors.border }}
@@ -157,31 +207,29 @@ const Dashboard = () => {
             patients={patients}
             selectedPatient={selectedPatient}
             onPatientSelect={handlePatientSelect}
+            onQueueUpdate={loadInitialData}
           />
         </div>
 
-        {/* Column 2: Live Encounter (Center) */}
         <div className="flex-1 min-w-0">
           <LiveEncounter
             encounterData={encounterData}
             selectedPatient={selectedPatient}
+            timelineData={timelineData}
+            onConsultationAction={loadInitialData}
           />
         </div>
 
-        {/* Column 3: Patient History & AI Analysis (Right) */}
         <div 
           className="w-96 border-l shrink-0"
           style={{ borderColor: colors.border }}
         >
           <PatientHistory
-            patientHistory={patientHistory}
-            aiAnalysis={aiAnalysis}
             selectedPatient={selectedPatient}
           />
         </div>
       </div>
 
-      {/* Status Bar */}
       <div 
         className="h-8 flex items-center justify-between px-6 text-xs border-t"
         style={{ 
@@ -191,17 +239,18 @@ const Dashboard = () => {
         }}
       >
         <div className="flex items-center gap-4">
-          <span>Status: Online</span>
-          <span>Queue: {patients.filter(p => p.status !== 'completed').length} active</span>
+          <span>Status: {dashboardStats ? 'Online' : 'Loading...'}</span>
+          <span>Queue: {dashboardStats?.queue?.current_size || 0} active</span>
           <span>Ready: {patients.filter(p => p.status === 'ready').length}</span>
+          <span>Total Patients: {dashboardStats?.patients?.total || 0}</span>
         </div>
         <div className="flex items-center gap-4">
-          <span>AI Analysis: Active</span>
+          <span>Backend Status: {dashboardStats ? 'Connected' : 'Loading...'}</span>
           <span>Version: 1.0.0</span>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Dashboard;
+export default Dashboard
