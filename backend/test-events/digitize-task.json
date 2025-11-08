@@ -1,0 +1,21 @@
+{
+  "Records": [
+    {
+      "eventVersion": "2.1",
+      "eventSource": "aws:s3",
+      "awsRegion": "eu-north-1",
+      "eventTime": "2025-11-08T10:00:00.000Z",
+      "eventName": "ObjectCreated:Put",
+      "s3": {
+        "bucket": {
+          "name": "phc-image-uploads-test",
+          "arn": "arn:aws:s3:::phc-image-uploads-test"
+        },
+        "object": {
+          "key": "PAT_12345/prescription-scan-2025-11-08.jpg",
+          "size": 2048000
+        }
+      }
+    }
+  ]
+}

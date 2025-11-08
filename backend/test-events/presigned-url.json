@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/upload-url",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"patient_id\": \"PAT_12345\", \"file_type\": \"audio\", \"file_extension\": \"mp3\"}"
+}
