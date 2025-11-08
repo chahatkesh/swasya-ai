@@ -1,11 +1,51 @@
 # Medical Timeline API Documentation
 
-This document describes the endpoints for generating and retrieving AI-powered medical timelines, as well as managing patient queue status.
+This document describes the endpoints for generating and retrieving AI-powered medical timelines, as well as managing patient queue status with the new nurse workflow.
 
 ## Table of Contents
 - [Timeline Endpoints](#timeline-endpoints)
 - [Queue Management Endpoints](#queue-management-endpoints)
 - [Data Models](#data-models)
+- [Workflow Overview](#workflow-overview)
+
+---
+
+## Workflow Overview
+
+### Complete Patient Journey
+
+```
+1. Registration (Nurse)
+   ↓ Auto-adds to queue with status: "waiting"
+   
+2. Nurse Records Data
+   ↓ Records audio, scans documents
+   
+3. Nurse Clicks "Send to Doctor"
+   ↓ POST /queue/{queue_id}/nurse-complete
+   ↓ Status changes to: "nurse_completed"
+   
+4. Timeline Generation (Automatic)
+   ↓ POST /documents/{patient_id}/complete-batch
+   ↓ Status auto-updates to: "ready_for_doctor"
+   
+5. Doctor Starts Consultation
+   ↓ POST /queue/{queue_id}/start
+   ↓ Status changes to: "in_consultation"
+   
+6. Doctor Completes
+   ↓ POST /queue/{queue_id}/complete
+   ↓ Status changes to: "completed"
+```
+
+### Queue Status Flow
+
+- **`waiting`**: Patient just registered, nurse hasn't started work
+- **`nurse_completed`**: Nurse finished, timeline generating
+- **`ready_for_doctor`**: Timeline ready, waiting for doctor
+- **`in_consultation`**: Doctor actively reviewing patient
+- **`completed`**: Consultation finished
+- **`cancelled`**: Queue entry cancelled
 
 ---
 
@@ -168,6 +208,42 @@ GET /documents/PT_123abc/timeline
 
 These endpoints manage the patient queue and consultation status flow.
 
+### 0. Patient Registration (Auto-Queue)
+
+**Endpoint:** `POST /patients`
+
+**Description:** Register a new patient. **NEW**: Automatically adds patient to queue with status `waiting`.
+
+**Request Body:**
+```json
+{
+  "uhid": "GH123456789",
+  "name": "Ram Kumar",
+  "phone": "9876543210",
+  "age": 45,
+  "gender": "male"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "patient_id": "PAT_123ABC",
+  "queue_id": "Q_A1B2C3D4",
+  "uhid": "GH123456789",
+  "message": "Patient Ram Kumar registered and added to queue"
+}
+```
+
+**✨ Key Changes:**
+- **NEW**: Auto-adds patient to queue (no separate `/queue` call needed)
+- **NEW**: Returns `queue_id` in response (nurse app stores this)
+- Initial queue status: `waiting`
+- Token number assigned automatically
+
+---
+
 ### 3. Get Queue Status
 
 **Endpoint:** `GET /queue`
@@ -185,9 +261,11 @@ GET /queue
   "success": true,
   "stats": {
     "waiting": 3,
-    "in_progress": 1,
+    "nurse_completed": 2,
+    "ready_for_doctor": 1,
+    "in_consultation": 1,
     "completed": 5,
-    "total": 9
+    "total": 12
   },
   "queue": [
     {
@@ -266,14 +344,65 @@ Or use UHID instead:
 
 ---
 
-### 5. Start Consultation
+### 5. Nurse Complete Patient ✨ NEW
 
-**Endpoint:** `POST /queue/{queue_id}/start`
+**Endpoint:** `POST /queue/{queue_id}/nurse-complete`
 
-**Description:** Marks a consultation as started. Changes status from `waiting` to `in_progress`.
+**Description:** Nurse marks patient as completed after recording audio/scanning documents. This triggers timeline generation automatically.
 
 **Path Parameters:**
 - `queue_id` (string, required): Queue entry identifier
+
+**Status Flow:**
+- `waiting` → `nurse_completed`
+
+**Request Example:**
+```bash
+POST /queue/Q_A1B2C3D4/nurse-complete
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Patient ready for timeline generation",
+  "queue_entry": {
+    "queue_id": "Q_A1B2C3D4",
+    "patient_id": "PT_123abc",
+    "patient_name": "Rajesh Kumar",
+    "status": "nurse_completed",
+    "nurse_completed_at": "2024-01-15T10:10:00"
+  }
+}
+```
+
+**What Happens Next:**
+1. Status changes to `nurse_completed`
+2. Timeline generation starts automatically
+3. When timeline is ready, status auto-updates to `ready_for_doctor`
+4. Doctor can then see patient in their queue
+
+**Nurse App Usage:**
+- Called when nurse clicks "Send to Doctor" button
+- Nurse can immediately proceed to next patient
+- Timeline processes in background
+
+**Error Responses:**
+- `404 Not Found`: Queue entry not found
+
+---
+
+### 6. Start Consultation
+
+**Endpoint:** `POST /queue/{queue_id}/start`
+
+**Description:** Doctor starts consultation with patient. Changes status from `ready_for_doctor` to `in_consultation`.
+
+**Path Parameters:**
+- `queue_id` (string, required): Queue entry identifier
+
+**Status Flow:**
+- `ready_for_doctor` → `in_consultation`
 
 **Request Example:**
 ```bash
@@ -289,7 +418,7 @@ POST /queue/Q_A1B2C3D4/start
     "queue_id": "Q_A1B2C3D4",
     "patient_id": "PT_123abc",
     "patient_name": "Rajesh Kumar",
-    "status": "in_progress",
+    "status": "in_consultation",
     "started_at": "2024-01-15T10:15:00"
   }
 }
@@ -301,14 +430,17 @@ POST /queue/Q_A1B2C3D4/start
 
 ---
 
-### 6. Complete Consultation
+### 7. Complete Consultation
 
 **Endpoint:** `POST /queue/{queue_id}/complete`
 
-**Description:** Marks a consultation as completed. This indicates the doctor has finished seeing the patient.
+**Description:** Doctor marks consultation as completed after finishing treatment.
 
 **Path Parameters:**
 - `queue_id` (string, required): Queue entry identifier
+
+**Status Flow:**
+- `in_consultation` → `completed`
 
 **Request Example:**
 ```bash
@@ -335,7 +467,7 @@ POST /queue/Q_A1B2C3D4/complete
 
 ---
 
-### 7. Get Waiting Patients
+### 8. Get Waiting Patients
 
 **Endpoint:** `GET /queue/waiting`
 
@@ -359,7 +491,7 @@ POST /queue/Q_A1B2C3D4/complete
 
 ---
 
-### 8. Get Current Patient
+### 9. Get Current Patient
 
 **Endpoint:** `GET /queue/current`
 
@@ -398,9 +530,11 @@ POST /queue/Q_A1B2C3D4/complete
 
 ## Data Models
 
-### Queue Status Enum
-- `waiting`: Patient in waiting room
-- `in_progress`: Currently with doctor
+### Queue Status Enum ✨ UPDATED
+- `waiting`: Patient just registered, nurse hasn't started work
+- `nurse_completed`: ✨ **NEW** - Nurse finished, timeline generating
+- `ready_for_doctor`: ✨ **NEW** - Timeline ready, waiting for doctor review
+- `in_consultation`: Currently with doctor (renamed from `in_progress`)
 - `completed`: Consultation finished
 - `cancelled`: Queue entry cancelled
 
@@ -420,44 +554,69 @@ POST /queue/Q_A1B2C3D4/complete
 
 ## Integration Examples
 
-### Nurse App Flow
+### Nurse App Flow ✨ UPDATED
 ```dart
-// 1. Register patient and get patient_id
-final patientId = await apiService.registerPatient(patientData);
+// 1. Register patient - AUTO-ADDS TO QUEUE
+final response = await ApiService.registerPatient(
+  uhid: uhid,
+  name: name,
+  phone: phone,
+  age: age,
+  gender: gender,
+);
+final patientId = response['patient_id'];
+final queueId = response['queue_id'];  // NEW: Store this!
+
+// Store queue_id in SharedPreferences for later use
+await prefs.setString('current_queue_id', queueId);
 
 // 2. Upload audio/documents with batch_id
 final batchId = uploadQueueManager.currentBatchId;
 await uploadQueueManager.uploadAudio(patientId, audioFile);
 await uploadQueueManager.uploadDocument(patientId, imageFile);
 
-// 3. Complete batch and generate timeline
-final result = await apiService.completeBatchAndGenerateTimeline(
-  patientId: patientId,
-  batchId: batchId,
-);
+// 3. Nurse clicks "Send to Doctor" button
+await ApiService.nurseCompletePatient(queueId);
+// Status: waiting → nurse_completed
 
-// 4. Add to doctor's queue (optional - can be automatic)
-await apiService.addToQueue(patientId: patientId, priority: 'normal');
+// 4. Timeline generates automatically in background
+// (Upload queue manager handles this via completeBatch)
+// Status auto-updates: nurse_completed → ready_for_doctor
+
+// 5. Nurse can immediately proceed to next patient
+Navigator.pushReplacement(context, HomeScreen());
 ```
 
-### Doctor Dashboard Flow
+### Doctor Dashboard Flow ✨ UPDATED
 ```javascript
 // 1. Get current queue status
 const queue = await fetch('/queue').then(r => r.json());
 
-// 2. Start consultation with next patient
-const queueId = queue.queue[0].queue_id;
-await fetch(`/queue/${queueId}/start`, { method: 'POST' });
+// 2. Filter patients by status
+const readyForDoctor = queue.queue.filter(p => p.status === 'ready_for_doctor');
+const inConsultation = queue.queue.filter(p => p.status === 'in_consultation');
 
-// 3. Get patient's medical timeline
-const patientId = queue.queue[0].patient_id;
-const timeline = await fetch(`/documents/${patientId}/timeline`).then(r => r.json());
+// Display only ready_for_doctor patients to doctor
+console.log(`${readyForDoctor.length} patients ready for review`);
 
-// 4. Review timeline and provide treatment
-// ... doctor interaction ...
+// 3. Doctor clicks on patient to start consultation
+const patient = readyForDoctor[0];
+await fetch(`/queue/${patient.queue_id}/start`, { method: 'POST' });
+// Status: ready_for_doctor → in_consultation
 
-// 5. Mark consultation as complete
-await fetch(`/queue/${queueId}/complete`, { method: 'POST' });
+// 4. Get patient's medical timeline
+const timeline = await fetch(`/documents/${patient.patient_id}/timeline`)
+  .then(r => r.json());
+
+// 5. Display timeline in UI
+displayTimeline(timeline);
+
+// 6. Doctor provides treatment and clicks "Complete"
+await fetch(`/queue/${patient.queue_id}/complete`, { method: 'POST' });
+// Status: in_consultation → completed
+
+// 7. Patient automatically removed from active queue
+refreshQueue();
 ```
 
 ---

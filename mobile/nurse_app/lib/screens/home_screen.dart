@@ -159,8 +159,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _navigateToPatientDetail(Map<String, dynamic> patient) {
-    print('👤 [HomeScreen] Navigating to patient detail: ${patient['patient_id']}');
+  void _navigateToPatientDetail(Map<String, dynamic> patient, {int? queuePosition}) {
+    print('👤 [HomeScreen] Navigating to patient detail: ${patient['patient_id']} (Queue Position: $queuePosition)');
     
     Navigator.push(
       context,
@@ -168,6 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => PatientDetailScreen(
           patientId: patient['patient_id'],
           patientName: patient['name'],
+          queuePosition: queuePosition,
         ),
       ),
     ).then((_) {
@@ -502,7 +503,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   child: Material(
                                                     color: Colors.transparent,
                                                     child: InkWell(
-                                                      onTap: () => _navigateToPatientDetail(patient),
+                                                      onTap: () => _navigateToPatientDetail(patient, queuePosition: queuePosition),
                                                       borderRadius: BorderRadius.circular(12),
                                                       child: Padding(
                                                         padding: EdgeInsets.all(AppSpacing.md),
