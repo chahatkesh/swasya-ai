@@ -11,12 +11,14 @@ class PatientDetailScreen extends StatefulWidget {
   final String patientId;
   final String patientName;
   final int? queuePosition;
+  final String? queueId;  // NEW: Pass queue_id directly from home screen
 
   const PatientDetailScreen({
     super.key,
     required this.patientId,
     required this.patientName,
     this.queuePosition,
+    this.queueId,  // NEW
   });
 
   @override
@@ -38,7 +40,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   void initState() {
     super.initState();
     _loadPatientData();
-    _loadQueueId();
+    
+    // Use queue_id passed from home screen if available, otherwise lookup
+    if (widget.queueId != null) {
+      _queueId = widget.queueId;
+      print('📋 [PatientDetail] Using queue_id from navigation: $_queueId');
+    } else {
+      _loadQueueId();
+    }
     
     // Initialize simple animation controller
     _animationController = AnimationController(
@@ -325,6 +334,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   Widget build(BuildContext context) {
     final hasNotes = _patientData != null && _patientData!['notes_count'] > 0;
     final hasHistory = _patientData != null && _patientData!['history_count'] > 0;
+
+    // Debug: Check button visibility conditions
+    print('🔍 [PatientDetail] Button visibility check:');
+    print('   - queuePosition: ${widget.queuePosition}');
+    print('   - _queueId: $_queueId');
+    print('   - Will show button: ${widget.queuePosition == 1 && _queueId != null}');
 
     return Scaffold(
       backgroundColor: AppColors.background,
