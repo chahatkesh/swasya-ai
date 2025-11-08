@@ -126,5 +126,44 @@
       "event_count": 2,
       "current_medications_count": 5
     }
+  ],
+  "PAT_B04F9889": [
+    {
+      "history_id": "TIMELINE_BA3D750E",
+      "patient_id": "PAT_B04F9889",
+      "created_at": "2025-11-08T14:45:52.953672",
+      "batch_id": "BATCH_D9EC4C30",
+      "type": "comprehensive_timeline",
+      "document_count": 2,
+      "timeline_summary": "Patient was recently diagnosed with Diabetes (level 400+) and Hypertension (Blood Pressure 125 mmHg) and was prescribed Tripride-2-forte 250mg and Lipikind-10 10mg. Further information is needed to assess the medication adherence and treatment effectiveness. No allergies were mentioned.",
+      "event_count": 1,
+      "current_medications_count": 2
+    }
+  ],
+  "PAT_5A7FD264": [
+    {
+      "history_id": "TIMELINE_0FC8A473",
+      "patient_id": "PAT_5A7FD264",
+      "created_at": "2025-11-08T14:50:38.422502",
+      "batch_id": "BATCH_08A2EE8B",
+      "type": "comprehensive_timeline",
+      "document_count": 2,
+      "timeline_summary": "Patient has 2 prescription documents on file. Individual analysis completed.",
+      "event_count": 2,
+      "current_medications_count": 0
+    }
+  ],
+  "PAT_A376F5A0": [
+    {
+      "history_id": "TIMELINE_0140A160",
+      "patient_id": "PAT_A376F5A0",
+      "created_at": "2025-11-08T14:52:52.741499",
+      "batch_id": "BATCH_B0EA3A5A",
+      "type": "comprehensive_timeline",
+      "document_count": 2,
+      "timeline_summary": "Rishi Ahuja, a 19-year-old, was diagnosed with diabetes (very high levels) and high blood pressure in February 2023 and was prescribed Tripride-2-forte and Lipikind-10. In March 2023, he was diagnosed with lower back pain and minor spinal damage and was prescribed Pentop DSR, Vitamin E and Calcium. It is important to determine the duration each medicine must be taken.",
+      "event_count": 2,
+      "current_medications_count": 5
+    }
   ]
 }

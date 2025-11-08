@@ -42,6 +42,10 @@ dependencies:
   file_picker: ^6.1.1
   permission_handler: ^11.0.1
   
+  # Audio recording for Scribe feature
+  flutter_sound: ^9.2.13
+  path_provider: ^2.1.1
+  
   # Camera for prescription scanning
   camera: ^0.10.5+5
   image_picker: ^1.0.4

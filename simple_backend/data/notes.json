@@ -68,5 +68,73 @@
         "language": "hindi"
       }
     }
+  ],
+  "PAT_72D90B86": [
+    {
+      "note_id": "NOTE_45567EBB",
+      "patient_id": "PAT_72D90B86",
+      "created_at": "2025-11-08T15:29:13.088591",
+      "audio_file": "PAT_72D90B86_audio_43ee7d7d.m4a",
+      "transcript": " So this is the dummy recording. We are testing the platform for which the feature is being developed. So if you feel here that this is not something appropriate, don't worry. Just write something relevant to the answer, right?",
+      "soap_note": {
+        "subjective": "",
+        "objective": "",
+        "assessment": "",
+        "plan": "",
+        "chief_complaint": "",
+        "medications": [],
+        "language": "english"
+      }
+    },
+    {
+      "note_id": "NOTE_1BE8D59C",
+      "patient_id": "PAT_72D90B86",
+      "created_at": "2025-11-08T15:30:07.437644",
+      "audio_file": "PAT_72D90B86_audio_ff1f5f1c.m4a",
+      "transcript": "\ud37c al\u00e9m\u03c1\u03b1, benchmark\u093e\u0e44\u0e21 Wildlife CostumeSuffer \u0926\u0947 \u0930\u091a thevik\u093e \u0938\u092c\u094d\u0938\u0915\u094d\u0939\u093e\u0902 \u0935\u0940 \u0915\u0930\u0947 \u0935\u0947 \u092a\u0942\u0932\u0947 \u0932\u0947 \u0915\u0947\u0902\u0926\u093c\u093e\u0935 \u0928\u093e \u0915\u0941\u091b\u093e \u0915\u0941\u091b\u093e \u092e\u0948\u0902\u0915 sack\u094b \u0935\u0947 \u0938 \u0938\u092e\u094d\u092e\u093e\u0930\u093e \u0915\u0940 \u0915\u0940 \u0935\u094b\u0921\u093e \u0928\u0917\u093e\u0938 \u0915\u0940 \u0905\u092c\u094d\u092f\u093e\u0930 \u0915\u0940 \u0924\u0939\u093e\u0924 \u0905\u0928\u094d\u092f\u093e\u0930 \u0938\u092e\u63a5\u4e0b\u4f86 \u090f\u0915 \u0935\u0947\u0902\u0928\u093e\u0928 \u092a\u0942\u0932 \u091f\u094c\u0902\u091b\u093e \u091c \u091a\u0948\u0928\u093e \u0935\u0947 \u0915\u094b \u090f\u0924 \u0930\u093e\u092f\u093e \u0939\u0948 \u0924\u094b \u0924\u094b \u0935\u093e\u0907\u0938 \u0924\u0930\u094d\u092e\u093e\u0907 \u0930\u0916\u093e\u091f\u0964",
+      "soap_note": {
+        "subjective": "No discernible patient complaints or symptoms can be extracted from the provided unintelligible text.",
+        "objective": "No observable facts or physical examination findings can be extracted from the provided unintelligible text.",
+        "assessment": "No medical assessment can be made due to unintelligible input.",
+        "plan": "No treatment plan or follow-up instructions can be extracted from the provided unintelligible text.",
+        "chief_complaint": "Not provided; the input text is unintelligible.",
+        "medications": [],
+        "language": "Mixed/Unintelligible"
+      }
+    },
+    {
+      "note_id": "NOTE_410F1325",
+      "patient_id": "PAT_72D90B86",
+      "created_at": "2025-11-08T15:30:39.547501",
+      "audio_file": "PAT_72D90B86_audio_06195061.m4a",
+      "transcript": " \u0928\u093e\u092e \u092c\u0924\u093e\u0908\u090f \u091a\u093e\u0939\u0926 \u0905\u092a\u0928\u093e \u092a\u0942\u0930\u093e \u0928\u093e\u092e \u092c\u0924\u093e\u0908\u090f \u091a\u093e\u0939\u0926 \u0915\u0940 \u0938\u0930\u094d\u0935\u093e\u0928\u0940 \u0915\u094c\u0928 \u0938\u0947 \u0924\u0939\u0938\u0940\u0932 \u0938\u0947 \u0939\u0948\u0902 \u092e\u0948\u0902 \u091a\u093e\u0939\u0932 \u0924\u0939\u0938\u0940\u0932 \u0915\u094c\u0938\u093e\u092e\u092d\u0940 \u0905\u091a\u094d\u091b\u093e \u0915\u094d\u092f\u093e \u0926\u093f\u0915\u094d\u0915\u0924 \u0906 \u0930\u0939\u0940 \u0939\u0948 \u091a\u093e\u0930 \u0926\u0947\u0928 \u0938\u0947 \u092c\u0941\u0916\u093e\u0930 \u0939\u0948 \u092c\u0941\u0916\u093e\u0930 \u0915\u0947 \u092c\u093e\u0930\u0947 \u092e\u0947\u0902 \u0925\u094b\u0921\u093c\u093e \u0914\u0930 \u092c\u0924\u093e\u0908\u090f \u092c\u0932\u092c \u091c\u092c \u0910\u0938\u0947 \u0920\u0902\u0921 \u0932\u0917\u0924\u0940 \u0939\u0948 \u091c\u092c \u0938\u094b\u0928\u0947 \u091c\u093e\u0924\u093e \u0939\ufffd \u0918\u0943\u091f\u0443\u043b\u044f \u092a\u0948\u091c\u093c\u0947\u0902 \u0926\u0942\u0939\u0930\u0947 \u0939\u0948\u0902 ..\u0932\u093f\u0932 \u0915\u094b\u0936\u094b \u0939\u0948? \u0935\u0928 \u092a\u0948\u0938\u0947 \u0938\u092e\u0947\u0902 \u090a\u091c\u093e\u0924\u0947 \u0939\u0948\u0902\u0964 \u0905\u0932\u094d\u0939\u093e\u0917\u0947 \u0915\u093e \u0930\u0947\u0935\u0932 \u0925\u093e\u092f\u094b \u0939\u0948 ... \u092e\u0928 \u0926\u094b \u0939\u0948\u0964 \u0938\u0939\u093e\u0902 \u0915\u094b\u0936\u0942\u0915\u0930 \u0936\u093e\u0928\u0947 \u092a\u0940\u0921\u093c\u0947 \u0926\u0941\u0928 \u091a\u093e\u0932\u0947 \u0938\u0947\u092e\u0947\u0936 \u0915\u0947 \u0917\u0941\u0937\u0923 \u092e\u0947\u0902 \u0925\u0947 50ered\u0935alar \u0928\u0940\u092f\u093e\u0964",
+      "soap_note": {
+        "subjective": "Patient reports fever for four days, accompanied by chills and cold shivers, especially when going to sleep.",
+        "objective": "No objective findings recorded during this conversation.",
+        "assessment": "Fever of unknown origin (4 days duration).",
+        "plan": "Further evaluation needed to determine the cause of fever.",
+        "chief_complaint": "Fever for four days.",
+        "medications": [],
+        "language": "hindi"
+      }
+    }
+  ],
+  "PAT_191908CF": [
+    {
+      "note_id": "NOTE_4706AE85",
+      "patient_id": "PAT_191908CF",
+      "created_at": "2025-11-08T15:32:54.426465",
+      "audio_file": "PAT_191908CF_audio_2bf4a609.m4a",
+      "transcript": " so how do you feel about the fever you are experiencing I feel that this is because of something I ate bad I'm not sure about it okay",
+      "soap_note": {
+        "subjective": "Patient reports experiencing fever. Patient attributes the fever to 'something I ate bad' but expresses uncertainty regarding this cause.",
+        "objective": "",
+        "assessment": "",
+        "plan": "",
+        "chief_complaint": "Fever.",
+        "medications": [],
+        "language": "english"
+      }
+    }
   ]
 }
