@@ -1,0 +1,65 @@
+/* Color System - Medical AI Theme */
+:root {
+  /* Primary Color Palette */
+  --color-background: #FDF9F6;           /* Soft cream/off-white */
+  --color-text-primary: #201510;         /* Deep brownish-black serif */
+  --color-text-secondary: #9A7A6E;       /* Warm muted brown */
+  --color-text-tertiary: #B48A6E;        /* Warm beige-brown */
+  
+  /* Interactive Colors */
+  --color-primary: #8A9663;              /* Soft olive green */
+  --color-primary-hover: #7A8553;        /* Darker olive green for hover */
+  --color-secondary: #FFFFFF;            /* White */
+  --color-accent: #D48B75;               /* Muted peach-pink */
+  
+  /* Semantic Colors */
+  --color-success: #8A9663;              /* Soft olive green */
+  --color-info: #B48A6E;                 /* Warm beige-brown */
+  --color-warning: #D48B75;              /* Muted peach-pink */
+  --color-error: #C85A54;                /* Muted red (added for completeness) */
+  
+  /* Border & Separator Colors */
+  --color-border: #E5D5C8;               /* Light warm beige */
+  --color-separator: #B48A6E;            /* Warm beige-brown */
+  
+  /* Surface Colors */
+  --color-surface: #FFFFFF;              /* White surface */
+  --color-surface-secondary: #F5F0EB;    /* Slightly darker cream */
+  
+  /* Shadow & Overlay Colors */
+  --color-shadow: rgba(32, 21, 16, 0.1); /* Subtle shadow using primary text */
+  --color-overlay: rgba(32, 21, 16, 0.5); /* Overlay using primary text */
+  
+  /* Opacity Variations */
+  --color-primary-10: rgba(138, 150, 99, 0.1);
+  --color-primary-20: rgba(138, 150, 99, 0.2);
+  --color-primary-50: rgba(138, 150, 99, 0.5);
+  
+  --color-text-primary-50: rgba(32, 21, 16, 0.5);
+  --color-text-primary-70: rgba(32, 21, 16, 0.7);
+}
+
+/* Alternative Color Schemes (for future use) */
+:root[data-theme="blue"] {
+  --color-primary: #3B82F6;
+  --color-primary-hover: #2563EB;
+  --color-text-tertiary: #6B7280;
+}
+
+:root[data-theme="green"] {
+  --color-primary: #10B981;
+  --color-primary-hover: #059669;
+  --color-text-tertiary: #6B7280;
+}
+
+/* Utility Classes */
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-background { background-color: var(--color-background); }
+.bg-surface { background-color: var(--color-surface); }
+
+.border-primary { border-color: var(--color-primary); }
+.border-default { border-color: var(--color-border); }

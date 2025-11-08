@@ -1,8 +1,23 @@
 import React from 'react'
+import { 
+  Hero, 
+  HowItWorks, 
+  CoreFeatures, 
+  ImpactMetrics, 
+  FAQ, 
+  Footer 
+} from '../components/landing'
 
 const Landing = () => {
   return (
-    <div>Landing Page</div>
+    <div className="min-h-screen">
+      <Hero />
+      <ImpactMetrics />
+      <HowItWorks />
+      <CoreFeatures />
+      <FAQ />
+      <Footer />
+    </div>
   )
 }
 
