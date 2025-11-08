@@ -3,14 +3,14 @@ Notes and History routes
 """
 
 from fastapi import APIRouter, HTTPException
-from app.services.storage_service import storage
+from app.services.mongodb_storage import mongodb_storage
 from datetime import datetime
 
 router = APIRouter(tags=["Notes & History"])
 
 
 @router.get("/notes/{patient_id}", response_model=dict)
-def get_patient_notes(patient_id: str):
+async def get_patient_notes(patient_id: str):
     """
     Get all medical notes for a patient
     
@@ -21,11 +21,11 @@ def get_patient_notes(patient_id: str):
     """
     
     # Verify patient exists
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
-    notes = storage.get_patient_notes(patient_id)
+    notes = await mongodb_storage.get_patient_notes(patient_id)
     
     return {
         "success": True,
@@ -37,7 +37,7 @@ def get_patient_notes(patient_id: str):
 
 
 @router.get("/notes/{patient_id}/latest", response_model=dict)
-def get_latest_note(patient_id: str):
+async def get_latest_note(patient_id: str):
     """
     Get most recent note for a patient
     
@@ -47,11 +47,11 @@ def get_latest_note(patient_id: str):
     - patient_id: Patient's unique identifier
     """
     
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
-    notes = storage.get_patient_notes(patient_id)
+    notes = await mongodb_storage.get_patient_notes(patient_id)
     
     if not notes:
         return {
@@ -71,7 +71,7 @@ def get_latest_note(patient_id: str):
 
 
 @router.get("/history/{patient_id}", response_model=dict)
-def get_patient_history(patient_id: str):
+async def get_patient_history(patient_id: str):
     """
     Get all prescription history for a patient
     
@@ -81,11 +81,11 @@ def get_patient_history(patient_id: str):
     - patient_id: Patient's unique identifier
     """
     
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
-    history = storage.get_patient_history(patient_id)
+    history = await mongodb_storage.get_patient_history(patient_id)
     
     return {
         "success": True,
@@ -97,7 +97,7 @@ def get_patient_history(patient_id: str):
 
 
 @router.get("/history/{patient_id}/medications", response_model=dict)
-def get_all_medications(patient_id: str):
+async def get_all_medications(patient_id: str):
     """
     Get comprehensive medication timeline for a patient
     
@@ -107,11 +107,11 @@ def get_all_medications(patient_id: str):
     - patient_id: Patient's unique identifier
     """
     
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
-    history = storage.get_patient_history(patient_id)
+    history = await mongodb_storage.get_patient_history(patient_id)
     
     # Extract all medications
     all_medications = []
@@ -137,7 +137,7 @@ def get_all_medications(patient_id: str):
 
 
 @router.get("/summary/{patient_id}", response_model=dict)
-def get_patient_summary(patient_id: str):
+async def get_patient_summary(patient_id: str):
     """
     Get complete patient summary
     
@@ -153,12 +153,12 @@ def get_patient_summary(patient_id: str):
     - patient_id: Patient's unique identifier
     """
     
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
-    notes = storage.get_patient_notes(patient_id)
-    history = storage.get_patient_history(patient_id)
+    notes = await mongodb_storage.get_patient_notes(patient_id)
+    history = await mongodb_storage.get_patient_history(patient_id)
     
     # Get latest note
     latest_note = notes[-1] if notes else None
@@ -203,7 +203,7 @@ def get_patient_summary(patient_id: str):
 
 
 @router.get("/timeline/{patient_id}", response_model=dict)
-def get_medical_timeline(patient_id: str):
+async def get_medical_timeline(patient_id: str):
     """
     Get complete medical timeline for a patient
     
@@ -222,12 +222,12 @@ def get_medical_timeline(patient_id: str):
     - content: Full data object
     """
     
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
-    notes = storage.get_patient_notes(patient_id)
-    history = storage.get_patient_history(patient_id)
+    notes = await mongodb_storage.get_patient_notes(patient_id)
+    history = await mongodb_storage.get_patient_history(patient_id)
     
     # Build timeline
     timeline = []

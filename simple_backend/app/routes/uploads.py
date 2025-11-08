@@ -3,7 +3,7 @@ Upload and processing routes (Audio and Images)
 """
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, BackgroundTasks
-from app.services.storage_service import storage
+from app.services.mongodb_storage import mongodb_storage
 from app.services.ai_service import transcribe_audio, generate_soap_note, extract_prescription
 import uuid
 import os
@@ -41,7 +41,7 @@ async def upload_audio(patient_id: str, file: UploadFile = File(...)):
     """
     
     # Verify patient exists
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
@@ -90,7 +90,7 @@ async def upload_audio(patient_id: str, file: UploadFile = File(...)):
             "soap_note": soap_note
         }
         
-        storage.add_note(patient_id, note_data)
+        await mongodb_storage.add_note(patient_id, note_data)
         
         print(f"✅ SOAP note created: {note_id}")
         
@@ -134,7 +134,7 @@ async def upload_prescription_image(patient_id: str, file: UploadFile = File(...
     """
     
     # Verify patient exists
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
@@ -177,7 +177,7 @@ async def upload_prescription_image(patient_id: str, file: UploadFile = File(...
             "type": "prescription"
         }
         
-        storage.add_history(patient_id, history_entry)
+        await mongodb_storage.add_history(patient_id, history_entry)
         
         print(f"✅ Prescription extracted: {history_id}")
         
