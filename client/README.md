@@ -1,16 +1,189 @@
-# React + Vite
+## **1. Nurse Mobile App (React Native)**
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Main Flow:**
+Queue → Patient Info → AI Scribe → AI Digitizer → Submit → Next Patient
 
-Currently, two official plugins are available:
+### 🔹 **Dashboard / Queue Screen**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* Patient Queue List (with name, UHID, symptoms tag, status: *waiting / in-progress / done*)
+* “Start Encounter” button for each patient
+* Search bar to find a patient by UHID
+* Refresh button (to sync latest patient queue)
 
-## React Compiler
+### 🔹 **Patient Profile / Encounter Start Screen**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+*  Display Patient Info Card (Name, Age, Gender, UHID, Last Visit Date)
+*  Two main buttons:
 
-## Expanding the ESLint configuration
+  * “Start AI Transcribe”
+  * “Scan Documents”
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+### 🔹 **AI Transcribe Screen**
+
+* Big circular **Record** button (toggle: Start/Stop Recording)
+* Real-time **Audio Waveform Animation** (visual feedback while recording)
+* Display **Live Transcription Textbox** (editable text showing recognized speech)
+* “Summarize for Doctor” button → triggers GenAI summarization
+* Loader + “Transcribing…” state animation
+* Success toast: “Transcription uploaded to doctor’s dashboard ✅”
+
+**Backend Integration:**
+→ `POST /encounter/scribe`
+
+---
+
+### 🔹 **AI Digitizer (Document Scan) Screen**
+
+* “Upload or Scan Documents” button (camera/gallery mock)
+* Display thumbnails of scanned documents (with dates)
+* “Analyze Documents” button → calls GenAI OCR
+* Result: Structured timeline (e.g., medication history)
+* “Send to Doctor” button → sends data to backend
+
+**Backend Integration:**
+→ `POST /encounter/scan`
+
+---
+
+### 🔹 **Summary / Confirmation Screen**
+
+* Show summarized SOAP note
+* Show extracted document history
+* “Submit & Move to Next Patient” button
+
+---
+
+## **2. Doctor’s Web Dashboard (React Web)**
+
+**Main Flow:** Queue → View Patient → SOAP Note + History → Insights / Map
+
+### 🔹 **Header / Global UI**
+
+* Logo + “Aarogya Sahayak” title
+* Doctor’s Name (e.g., “Dr. Priya”) + Profile Icon
+* “Active Patients” count
+* “Outbreak Map” link in top nav
+
+---
+
+### 🔹 **Patient Queue Panel**
+
+* Left sidebar listing current patients
+* Status indicator (🟢 Active / 🟡 Waiting / 🔴 Done)
+* Each patient card shows:
+
+  * Name + Age
+  * UHID
+  * Symptoms summary (from AI Scribe)
+
+---
+
+### 🔹 **Patient Details Panel**
+
+* Patient Info Card (basic demographics + UHID)
+* Tabs / Sections:
+
+  1. **SOAP Note (Live Typing Animation)**
+
+     * Subjective
+     * Objective
+     * Assessment
+     * Plan
+     * “Last updated: [time ago]”
+  2. **Medical History Timeline**
+
+     * Split View:
+
+       * Left: Uploaded document preview (image)
+       * Right: Structured extracted data (e.g., “Amlodipine 5mg — 12 May 2024”)
+     * Smooth fade-in animation
+  3. **Insights (Optional Future)**
+
+     * AI Suggestions / Red flags (if we implement later)
+
+**Backend Integration:**
+→ `GET /dashboard/patient/{id}` (polls every 2s)
+
+---
+
+### 🔹 **Outbreak Map (Optional WOW Screen)**
+
+* Dark-mode map background
+* Pulsing red markers at high case-density areas
+* Tooltip showing “12 Fever Cases in Village X”
+* Dropdown: Filter by symptom type (fever, cough, etc.)
+* Legend + Last updated time
+
+---
+
+## **3. Admin Dashboard (Web)**
+
+**Purpose:** Monitor system usage, outbreaks, and queue statistics.
+
+### 🔹 **Header / Global Controls**
+
+* “Admin Console” title
+* Filter by region / PHC center
+* “Export Report” button (download CSV/PDF)
+* “Log out” button
+
+---
+
+### 🔹 **Overview Cards**
+
+* Total Active Patients
+* Total Registered Nurses
+* Total Registered Doctors
+* Total Reports Generated Today
+
+---
+
+### 🔹 **Analytics Section**
+
+* Chart: “Cases per Symptom Type” (Bar Chart)
+* Chart: “Patient Load per Doctor” (Bar / Pie)
+* Outbreak Map (same as Doctor’s view, larger)
+* Line Chart: “Trend of New Cases (7 days)”
+
+---
+
+### 🔹 **Management Section**
+
+* Manage Doctors & Nurses (add/remove/update)
+* View all Patient Records (table: name, UHID, date, doctor assigned)
+* Access Logs (who accessed what)
+* Alert System (manual override or alert creation)
+
+---
+
+## **4. Public Report Access Page**
+
+**URL:** `/report`
+
+### 🔹 **Patient Self-Service Page**
+
+* Input field: “Enter Your UHID”
+* “Search” button
+* Once found:
+
+  * Show basic patient details
+  * “Download Report (PDF)” button
+  * Preview report summary (SOAP + timeline)
+* Handle invalid UHID gracefully (“No record found.”)
+
+---
+
+## Summary Table (For Quick View)
+
+| Interface              | Core Components                                             |
+| ---------------------- | ----------------------------------------------------------- |
+| **Nurse App**          | Queue List, AI Transcribe, Document Scanner, Summary        |
+| **Doctor Dashboard**   | Patient Queue, Live SOAP Note, History Viewer, Outbreak Map |
+| **Admin Dashboard**    | Overview Analytics, Outbreak Map, Management Tools          |
+| **Public Report Page** | UHID Input, Patient Report Download                         |
+
+---
+
+Would you like me to create **a visual UI layout / wireframe flow** next — like how the screens connect and look (mobile + web) — so you can show it in your hackathon presentation or design in Figma?
