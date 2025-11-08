@@ -1,4 +1,4 @@
 """
 Routes package
 """
-from . import patients, queue, uploads, notes
+from . import patients, queue, uploads, notes, reports

@@ -63,12 +63,36 @@ async def generate_soap_note(transcript: str) -> Dict:
         Dictionary containing SOAP note fields
     """
     
-    prompt = f"""You are a medical scribe at a Primary Healthcare Center in India.
+    prompt = f"""You are an expert medical scribe working in a Primary Healthcare Center in India.
 
-Convert this conversation between nurse and patient into a structured SOAP note.
+IMPORTANT CONTEXT:
+- The conversation below is a SPEECH-TO-TEXT TRANSCRIPT from an audio recording between a nurse and a patient
+- The transcript may contain errors, mishearings, incomplete sentences, and background noise artifacts
+- Medicine names are OFTEN INCORRECT in STT - use your medical knowledge to correct common Indian medicine names
+- The conversation may be in Hindi, English, or mixed (Hinglish)
+- Infer and extract medical information even from casual, colloquial language
 
-CONVERSATION:
+TASK:
+Convert this messy nurse-patient conversation into a clean, structured SOAP note.
+
+CONVERSATION TRANSCRIPT (RAW STT OUTPUT):
 {transcript}
+
+INSTRUCTIONS:
+1. **Subjective**: Extract what the PATIENT says about their symptoms, complaints, history. Infer duration, severity, and triggers even if not explicitly stated.
+2. **Objective**: Extract what the NURSE observes or measures - vitals (BP, temp, pulse), physical examination findings, visible symptoms. If not mentioned, write "Physical examination pending".
+3. **Assessment**: Make a preliminary diagnosis or health assessment based on symptoms. Always provide your best medical inference - never leave empty.
+4. **Plan**: Extract treatment recommendations, medicine prescriptions, follow-up instructions. Correct medicine names if they appear garbled (e.g., "Para sit a mole" → "Paracetamol", "met for min" → "Metformin").
+5. **Chief Complaint**: One concise sentence summarizing the main medical issue.
+6. **Medications**: List all medicines mentioned with corrected spellings.
+
+MEDICINE NAME CORRECTION EXAMPLES:
+- "para sit a mole", "para c tamol" → "Paracetamol"
+- "met for min", "metform in" → "Metformin"
+- "amal dip in", "a modo pin" → "Amlodipine"
+- "see pro flex a sin", "sipro" → "Ciprofloxacin"
+- "az throw my sin" → "Azithromycin"
+- "d cloud phenac" → "Diclofenac"
 
 Return ONLY valid JSON (no markdown, no code blocks):
 {{
@@ -81,7 +105,8 @@ Return ONLY valid JSON (no markdown, no code blocks):
     "language": "hindi/english/mixed"
 }}
 
-Be concise and professional. Extract only medical information.
+NEVER use "Not documented" - always infer something meaningful from the conversation.
+Be concise, medically accurate, and professionally worded.
 """
     
     try:
