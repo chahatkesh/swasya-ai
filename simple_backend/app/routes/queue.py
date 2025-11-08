@@ -4,7 +4,7 @@ Queue management routes
 
 from fastapi import APIRouter, HTTPException
 from app.models.schemas import QueueEntry, QueueStatus
-from app.services.storage_service import storage
+from app.services.mongodb_storage import mongodb_storage
 import uuid
 from datetime import datetime
 
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/queue", tags=["Queue Management"])
 
 
 @router.get("", response_model=dict)
-def get_queue():
+async def get_queue():
     """
     Get current queue status
     
@@ -24,7 +24,7 @@ def get_queue():
     - completed: Consultation finished
     """
     
-    queue = storage.get_queue()
+    queue = await mongodb_storage.get_queue()
     
     # Calculate statistics
     stats = {
@@ -44,7 +44,7 @@ def get_queue():
 
 
 @router.post("", response_model=dict)
-def add_to_queue(entry: QueueEntry):
+async def add_to_queue(entry: QueueEntry):
     """
     Add patient to queue
     
@@ -69,7 +69,7 @@ def add_to_queue(entry: QueueEntry):
     
     # Lookup patient by uhid if provided
     if entry.uhid:
-        patient = storage.get_patient_by_uhid(entry.uhid)
+        patient = await mongodb_storage.get_patient_by_uhid(entry.uhid)
         if not patient:
             raise HTTPException(
                 status_code=404, 
@@ -79,7 +79,7 @@ def add_to_queue(entry: QueueEntry):
         print(f"✅ Found patient by UHID {entry.uhid}: {patient['name']}")
     else:
         # Use patient_id directly
-        patient = storage.get_patient(entry.patient_id)
+        patient = await mongodb_storage.get_patient(entry.patient_id)
         if not patient:
             raise HTTPException(
                 status_code=404, 
@@ -88,7 +88,7 @@ def add_to_queue(entry: QueueEntry):
         patient_id = entry.patient_id
     
     # Check if already in queue
-    queue = storage.get_queue()
+    queue = await mongodb_storage.get_queue()
     existing = next((q for q in queue if q['patient_id'] == patient_id and q['status'] != 'completed'), None)
     if existing:
         raise HTTPException(status_code=400, detail=f"Patient already in queue with status: {existing['status']}")
@@ -111,7 +111,7 @@ def add_to_queue(entry: QueueEntry):
         "completed_at": None
     }
     
-    storage.add_to_queue(queue_entry)
+    await mongodb_storage.add_to_queue(queue_entry)
     
     print(f"✅ Added to queue: {patient['name']} - Token #{token_number}")
     
@@ -123,13 +123,13 @@ def add_to_queue(entry: QueueEntry):
 
 
 @router.get("/waiting", response_model=dict)
-def get_waiting_patients():
+async def get_waiting_patients():
     """
     Get all patients currently waiting
     
     Useful for displaying on waiting room screen
     """
-    waiting = storage.get_queue_by_status(QueueStatus.WAITING)
+    waiting = await mongodb_storage.get_queue_by_status(QueueStatus.WAITING)
     
     return {
         "success": True,
@@ -139,13 +139,13 @@ def get_waiting_patients():
 
 
 @router.get("/current", response_model=dict)
-def get_current_patient():
+async def get_current_patient():
     """
     Get patient currently being treated
     
     Useful for doctor's dashboard
     """
-    in_consultation = storage.get_queue_by_status(QueueStatus.IN_CONSULTATION)
+    in_consultation = await mongodb_storage.get_queue_by_status(QueueStatus.IN_CONSULTATION)
     
     if not in_consultation:
         return {
@@ -156,7 +156,7 @@ def get_current_patient():
     
     # Should only be one in_consultation at a time
     current = in_consultation[0]
-    patient = storage.get_patient(current['patient_id'])
+    patient = await mongodb_storage.get_patient(current['patient_id'])
     
     return {
         "success": True,
@@ -166,7 +166,7 @@ def get_current_patient():
 
 
 @router.post("/{queue_id}/nurse-complete", response_model=dict)
-def nurse_complete_patient(queue_id: str):
+async def nurse_complete_patient(queue_id: str):
     """
     Nurse marks patient as completed (timeline will be generated)
     
@@ -181,7 +181,7 @@ def nurse_complete_patient(queue_id: str):
     'ready_for_doctor' when complete.
     """
     
-    updated = storage.update_queue_status(
+    updated = await mongodb_storage.update_queue_status(
         queue_id,
         QueueStatus.NURSE_COMPLETED,
         nurse_completed_at=datetime.now().isoformat()
@@ -200,7 +200,7 @@ def nurse_complete_patient(queue_id: str):
 
 
 @router.post("/{queue_id}/start", response_model=dict)
-def start_consultation(queue_id: str):
+async def start_consultation(queue_id: str):
     """
     Mark consultation as started
     
@@ -211,7 +211,7 @@ def start_consultation(queue_id: str):
     """
     
     # Check if another consultation is in progress
-    in_consultation = storage.get_queue_by_status(QueueStatus.IN_CONSULTATION)
+    in_consultation = await mongodb_storage.get_queue_by_status(QueueStatus.IN_CONSULTATION)
     if in_consultation:
         raise HTTPException(
             status_code=400, 
@@ -219,7 +219,7 @@ def start_consultation(queue_id: str):
         )
     
     # Update status
-    updated = storage.update_queue_status(
+    updated = await mongodb_storage.update_queue_status(
         queue_id, 
         QueueStatus.IN_CONSULTATION,
         started_at=datetime.now().isoformat()
@@ -238,7 +238,7 @@ def start_consultation(queue_id: str):
 
 
 @router.post("/{queue_id}/complete", response_model=dict)
-def complete_consultation(queue_id: str):
+async def complete_consultation(queue_id: str):
     """
     Mark consultation as completed
     
@@ -248,7 +248,7 @@ def complete_consultation(queue_id: str):
     Changes status to 'completed'
     """
     
-    updated = storage.update_queue_status(
+    updated = await mongodb_storage.update_queue_status(
         queue_id,
         QueueStatus.COMPLETED,
         completed_at=datetime.now().isoformat()
@@ -267,7 +267,7 @@ def complete_consultation(queue_id: str):
 
 
 @router.post("/{queue_id}/cancel", response_model=dict)
-def cancel_queue_entry(queue_id: str):
+async def cancel_queue_entry(queue_id: str):
     """
     Cancel/remove patient from queue
     
@@ -275,7 +275,7 @@ def cancel_queue_entry(queue_id: str):
     - queue_id: Queue entry identifier
     """
     
-    updated = storage.update_queue_status(
+    updated = await mongodb_storage.update_queue_status(
         queue_id,
         QueueStatus.CANCELLED,
         cancelled_at=datetime.now().isoformat()
@@ -292,16 +292,18 @@ def cancel_queue_entry(queue_id: str):
 
 
 @router.delete("/cleanup", response_model=dict)
-def cleanup_completed():
+async def cleanup_completed():
     """
     Remove completed entries from queue
     
     Useful for keeping queue display clean
     """
     
-    before_count = len(storage.get_queue())
-    storage.clear_completed_queue()
-    after_count = len(storage.get_queue())
+    queue = await mongodb_storage.get_queue()
+    before_count = len(queue)
+    await mongodb_storage.clear_completed_queue()
+    queue = await mongodb_storage.get_queue()
+    after_count = len(queue)
     
     removed = before_count - after_count
     
@@ -310,3 +312,4 @@ def cleanup_completed():
         "message": f"Removed {removed} completed entries",
         "remaining": after_count
     }
+

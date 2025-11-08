@@ -9,7 +9,7 @@ from app.models.schemas import (
     SuccessResponse,
     QueueStatus
 )
-from app.services.storage_service import storage
+from app.services.mongodb_storage import mongodb_storage
 import uuid
 from datetime import datetime
 from typing import List
@@ -17,8 +17,9 @@ from typing import List
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
 
+
 @router.get("/check-uhid/{uhid}", response_model=dict)
-def check_uhid(uhid: str):
+async def check_uhid(uhid: str):
     """
     Check if a UHID (Unified Health ID) exists in the system
     
@@ -36,7 +37,7 @@ def check_uhid(uhid: str):
     - patient: Patient data if found (null if not found)
     """
     
-    patient = storage.get_patient_by_uhid(uhid)
+    patient = await mongodb_storage.get_patient_by_uhid(uhid)
     
     if patient:
         print(f"✅ UHID {uhid} found - Patient: {patient.get('name')}")
@@ -57,7 +58,7 @@ def check_uhid(uhid: str):
 
 
 @router.post("", response_model=dict)
-def register_patient(patient: PatientCreate):
+async def register_patient(patient: PatientCreate):
     """
     Register a new patient with UHID (Unified Health ID)
     
@@ -80,7 +81,7 @@ def register_patient(patient: PatientCreate):
     """
     
     # Check if UHID already exists
-    existing_patient = storage.get_patient_by_uhid(patient.uhid)
+    existing_patient = await mongodb_storage.get_patient_by_uhid(patient.uhid)
     if existing_patient:
         print(f"❌ UHID {patient.uhid} already registered - Patient: {existing_patient.get('name')}")
         raise HTTPException(
@@ -110,13 +111,13 @@ def register_patient(patient: PatientCreate):
     }
     
     # Save to storage
-    storage.create_patient(patient_id, patient_data)
+    await mongodb_storage.create_patient(patient_id, patient_data)
     
     print(f"✅ Registered: {patient_id} - UHID: {patient.uhid} - {patient.name}")
     
     # NEW: Auto-add to queue
     queue_id = f"Q_{uuid.uuid4().hex[:8].upper()}"
-    queue = storage.get_queue()
+    queue = await mongodb_storage.get_queue()
     active_queue = [q for q in queue if q['status'] != 'completed']
     token_number = len(active_queue) + 1
     
@@ -134,7 +135,7 @@ def register_patient(patient: PatientCreate):
         "timeline_ready_at": None
     }
     
-    storage.add_to_queue(queue_entry)
+    await mongodb_storage.add_to_queue(queue_entry)
     
     print(f"✅ Added to queue: Token #{token_number} - {patient.name}")
     
@@ -148,7 +149,7 @@ def register_patient(patient: PatientCreate):
 
 
 @router.get("", response_model=dict)
-def list_patients():
+async def list_patients():
     """
     Get list of all registered patients
     
@@ -160,7 +161,7 @@ def list_patients():
     start = time.time()
     print(f"📋 [API] GET /patients - Request received")
     
-    patients = storage.get_all_patients()
+    patients = await mongodb_storage.get_all_patients()
     
     elapsed = (time.time() - start) * 1000
     print(f"📋 [API] GET /patients - Returning {len(patients)} patients in {elapsed:.2f}ms")
@@ -173,7 +174,7 @@ def list_patients():
 
 
 @router.get("/{patient_id}", response_model=dict)
-def get_patient_details(patient_id: str):
+async def get_patient_details(patient_id: str):
     """
     Get detailed information about a specific patient
     
@@ -188,16 +189,16 @@ def get_patient_details(patient_id: str):
     """
     
     # Get patient
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
     # Get related data
-    notes = storage.get_patient_notes(patient_id)
-    history = storage.get_patient_history(patient_id)
+    notes = await mongodb_storage.get_patient_notes(patient_id)
+    history = await mongodb_storage.get_patient_history(patient_id)
     
     # Check queue status
-    queue = storage.get_queue()
+    queue = await mongodb_storage.get_queue()
     queue_entry = next((q for q in queue if q['patient_id'] == patient_id), None)
     
     return {
@@ -212,7 +213,7 @@ def get_patient_details(patient_id: str):
 
 
 @router.get("/{patient_id}/complete", response_model=dict)
-def get_patient_complete_record(patient_id: str):
+async def get_patient_complete_record(patient_id: str):
     """
     Get COMPLETE patient record with all notes and history
     
@@ -223,13 +224,13 @@ def get_patient_complete_record(patient_id: str):
     """
     
     # Get patient
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
     # Get all data
-    notes = storage.get_patient_notes(patient_id)
-    history = storage.get_patient_history(patient_id)
+    notes = await mongodb_storage.get_patient_notes(patient_id)
+    history = await mongodb_storage.get_patient_history(patient_id)
     
     return {
         "success": True,
@@ -240,7 +241,7 @@ def get_patient_complete_record(patient_id: str):
 
 
 @router.put("/{patient_id}", response_model=dict)
-def update_patient(patient_id: str, updates: dict):
+async def update_patient(patient_id: str, updates: dict):
     """
     Update patient information
     
@@ -251,12 +252,12 @@ def update_patient(patient_id: str, updates: dict):
     - Any patient fields to update (name, phone, age, gender)
     """
     
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
     # Update patient
-    updated_patient = storage.update_patient(patient_id, updates)
+    updated_patient = await mongodb_storage.update_patient(patient_id, updates)
     
     return {
         "success": True,

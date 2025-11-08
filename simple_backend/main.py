@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import patients, queue, uploads, notes, documents
 from app.services.storage_service import storage
 from app.services.mongo_service import mongo_service
+from app.services.mongodb_storage import mongodb_storage
 import os
 from dotenv import load_dotenv
 
@@ -196,6 +197,7 @@ async def startup_event():
     print("✅ AI services configured (Groq + Gemini)")
     print("🔄 Connecting to MongoDB...")
     await mongo_service.connect()
+    await mongodb_storage.connect()  # NEW: Connect MongoDB storage
     print("✅ Routes loaded:")
     print("   - /patients  (Patient Management)")
     print("   - /queue     (Queue Management)")
@@ -213,6 +215,7 @@ async def shutdown_event():
     """Cleanup on shutdown"""
     print("\n🛑 PHC AI Co-Pilot Backend shutting down...")
     await mongo_service.disconnect()
+    await mongodb_storage.disconnect()  # NEW: Disconnect MongoDB storage
 
 
 if __name__ == "__main__":
