@@ -74,50 +74,87 @@ class _RecordAudioScreenState extends State<RecordAudioScreen> {
     });
 
     try {
-      // Get presigned URL for audio upload
-      final fileName = _selectedFileName ?? 'audio.mp3';
-      final fileExtension = fileName.split('.').last;
-      
-      final presignedData = await ApiService.getUploadUrl(
-        patientId: widget.patientId,
-        fileType: 'audio',
-        fileExtension: fileExtension,
-      );
-
-      print('📤 Presigned URL Response: $presignedData');
-      print('📤 Uploading to S3: ${presignedData['upload_url']}');
-      print('🪣 S3 Key: ${presignedData['file_key']}');
-
-      // Upload file to S3
+      // Read file
       final file = File(_selectedFilePath!);
       final fileBytes = await file.readAsBytes();
-      
-      await ApiService.uploadFileToS3(
-        presignedUrl: presignedData['upload_url'],
+      final fileName = _selectedFileName ?? 'audio.mp3';
+
+      print('📤 Uploading audio: $fileName');
+      print('📊 Patient ID: ${widget.patientId}');
+
+      // Upload directly to backend (no presigned URL needed)
+      final response = await ApiService.uploadAudio(
+        patientId: widget.patientId,
         fileBytes: fileBytes,
-        contentType: 'audio/mpeg',
+        fileName: fileName,
       );
 
-      print('✅ Upload successful! Lambda should trigger automatically.');
+      print('✅ Upload successful!');
+      print('� Transcript: ${response['transcript']?.substring(0, 100)}...');
+      print('🏥 SOAP Note generated: ${response['soap_note']}');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Audio uploaded successfully! Processing...'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
-        );
-
-        // Navigate to camera screen
-        await Future.delayed(const Duration(seconds: 2));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CameraScreen(
-              patientId: widget.patientId,
-              patientName: widget.patientName ?? 'Patient',
+        // Show success with SOAP note preview
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Processing Complete!'),
+              ],
             ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Audio transcribed and SOAP note generated!',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  if (response['soap_note'] != null) ...[
+                    const Text(
+                      'Chief Complaint:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    Text(
+                      response['soap_note']['chief_complaint'] ?? 'N/A',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Assessment:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    Text(
+                      response['soap_note']['assessment'] ?? 'N/A',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Navigate to camera screen
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CameraScreen(
+                        patientId: widget.patientId,
+                        patientName: widget.patientName ?? 'Patient',
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Next: Scan Document'),
+              ),
+            ],
           ),
         );
       }
@@ -128,6 +165,7 @@ class _RecordAudioScreenState extends State<RecordAudioScreen> {
           SnackBar(
             content: Text('Upload failed: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -236,7 +274,7 @@ class _RecordAudioScreenState extends State<RecordAudioScreen> {
                         )
                       : const Icon(Icons.cloud_upload),
                   label: Text(
-                    _isUploading ? 'Uploading...' : 'Upload to AWS S3',
+                    _isUploading ? 'Uploading...' : 'Upload & Process',
                     style: const TextStyle(fontSize: 18),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -258,7 +296,7 @@ class _RecordAudioScreenState extends State<RecordAudioScreen> {
                     Icon(Icons.info_outline, color: Colors.blue, size: 32),
                     SizedBox(height: 12),
                     Text(
-                      'Test Flow',
+                      'Processing Flow',
                       style: TextStyle(
                         color: Colors.blue,
                         fontWeight: FontWeight.bold,
@@ -267,12 +305,12 @@ class _RecordAudioScreenState extends State<RecordAudioScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      '1. Pick an audio file (MP3/M4A)\n'
-                      '2. Upload → S3 Bucket\n'
-                      '3. S3 Event → Lambda (ScribeTask)\n'
-                      '4. AWS Transcribe → Text\n'
-                      '5. Gemini AI → SOAP Notes\n'
-                      '6. Save → DynamoDB',
+                      '1. Pick audio file (MP3/M4A)\n'
+                      '2. Upload to backend\n'
+                      '3. Groq Whisper → Transcribe\n'
+                      '4. Gemini AI → SOAP Notes\n'
+                      '5. Save to patient record\n'
+                      '6. Get instant results!',
                       style: TextStyle(
                         color: Colors.black87,
                         fontSize: 14,

@@ -6,11 +6,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app
+# Copy entire app directory structure
+COPY app/ ./app/
 COPY main.py .
 
-# Create uploads directory
-RUN mkdir -p /app/uploads
+# Create data directories
+RUN mkdir -p /app/data/uploads
 
 # Expose port
 EXPOSE 8000

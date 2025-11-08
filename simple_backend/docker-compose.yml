@@ -24,6 +24,7 @@ services:
     environment:
       - MONGODB_URL=mongodb://admin:phc2024@mongodb:27017/phc?authSource=admin
     volumes:
+      - ./app:/app/app
       - ./main.py:/app/main.py
       - ./.env:/app/.env
       - ./data:/app/data

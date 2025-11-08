@@ -56,47 +56,92 @@ class _CameraScreenState extends State<CameraScreen> {
       // Read file
       final file = File(_imageFile!.path);
       final fileBytes = await file.readAsBytes();
+      final fileName = 'prescription_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      // Get presigned URL
-      final urlData = await ApiService.getUploadUrl(
+      print('📸 Uploading image: $fileName');
+      print('📊 Patient ID: ${widget.patientId}');
+
+      // Upload directly to backend
+      final response = await ApiService.uploadImage(
         patientId: widget.patientId,
-        fileType: 'image',
-        fileExtension: 'jpg',
-      );
-
-      final uploadUrl = urlData['upload_url'];
-
-      // Upload to S3
-      await ApiService.uploadFileToS3(
-        presignedUrl: uploadUrl,
         fileBytes: fileBytes,
-        contentType: 'image/jpeg',
+        fileName: fileName,
       );
+
+      print('✅ Upload successful!');
+      print('💊 Prescription extracted: ${response['prescription_data']}');
 
       if (!mounted) return;
 
-      // Show success dialog
+      // Show success dialog with prescription data
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Success!'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
+          title: const Row(
             children: [
-              const Icon(
-                Icons.check_circle,
-                color: Colors.green,
-                size: 64,
-              ),
-              const SizedBox(height: 16),
-              Text('Patient ${widget.patientName} data uploaded!'),
-              const SizedBox(height: 8),
-              const Text(
-                'Processing will take ~30 seconds',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
+              Icon(Icons.check_circle, color: Colors.green, size: 32),
+              SizedBox(width: 8),
+              Expanded(child: Text('Prescription Extracted!')),
             ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Patient: ${widget.patientName}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                if (response['prescription_data'] != null) ...[
+                  const Text(
+                    'Extracted Information:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  if (response['prescription_data']['doctor_name'] != null)
+                    Text(
+                      'Doctor: ${response['prescription_data']['doctor_name']}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  if (response['prescription_data']['date'] != null)
+                    Text(
+                      'Date: ${response['prescription_data']['date']}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Medications:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  if (response['prescription_data']['medications'] != null)
+                    ...List.generate(
+                      (response['prescription_data']['medications'] as List).length,
+                      (index) {
+                        final med = response['prescription_data']['medications'][index];
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 8, top: 4),
+                          child: Text(
+                            '• ${med['name'] ?? 'Unknown'} ${med['dosage'] ?? ''}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+                const SizedBox(height: 16),
+                const Text(
+                  'Data saved to patient history!',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             ElevatedButton(
@@ -104,17 +149,23 @@ class _CameraScreenState extends State<CameraScreen> {
                 // Go back to home
                 Navigator.of(context).popUntil((route) => route.isFirst);
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Done'),
             ),
           ],
         ),
       );
     } catch (e) {
+      print('❌ Upload error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Upload error: $e'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
         ),
       );
     } finally {
