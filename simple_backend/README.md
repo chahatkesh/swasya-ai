@@ -1,5 +1,7 @@
 # Simple Backend - Quick Setup
 
+> **✨ New:** Backend has been refactored into modular route files for better maintainability! See [REFACTORING_DOCS.md](REFACTORING_DOCS.md) for details.
+
 ## 🚀 One Command Start
 
 ```bash
@@ -87,3 +89,32 @@ docker-compose restart
 ```
 
 No rebuild needed - code is mounted!
+
+---
+
+## 📚 Project Structure
+
+The backend is now organized into modular files:
+
+```
+simple_backend/
+├── main.py              # App initialization (68 lines)
+├── models.py            # Data models
+├── config.py            # Configuration
+├── routes/              # Modular route handlers
+│   ├── health.py       # Health check endpoints
+│   ├── patients.py     # Patient management (3 endpoints)
+│   ├── queue.py        # Queue management (4 endpoints)
+│   └── uploads.py      # Upload & AI processing (3 endpoints)
+└── utils/              # Utility functions
+    ├── storage.py      # JSON storage helpers
+    └── ai_services.py  # AI integrations (Groq Whisper, Gemini Vision)
+```
+
+**Benefits:**
+- 90% reduction in main.py complexity (569 → 68 lines)
+- Clear separation of concerns
+- Easier to test and maintain
+- Simple to add new features
+
+See [REFACTORING_DOCS.md](REFACTORING_DOCS.md) for complete details.

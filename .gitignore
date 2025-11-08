@@ -2,3 +2,10 @@ node_modules/
 .env
 .venv/
 __pycache__/
+*.pyc
+.pytest_cache/
+*.log
+simple_backend/data/
+simple_backend/config_test.py
+simple_backend/main_original.py
+simple_backend/main_backup.py
