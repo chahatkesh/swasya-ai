@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../services/api_service.dart';
+import '../services/upload_queue_manager.dart';
 
 class CameraScreen extends StatefulWidget {
   final String patientId;
@@ -19,27 +19,50 @@ class CameraScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<CameraScreen> {
   final ImagePicker _picker = ImagePicker();
+  final UploadQueueManager _queueManager = UploadQueueManager();
+  
   XFile? _imageFile;
-  bool _isUploading = false;
   String? _batchId;
   int _documentCount = 0;
-  List<Map<String, dynamic>> _uploadedDocuments = [];
+  bool _isCompletingBatch = false;
 
   @override
   void initState() {
     super.initState();
     _startBatch();
+    
+    // Listen to queue updates for live UI refresh
+    _queueManager.addListener(_onQueueUpdate);
+    
+    print('🎬 [CameraScreen] Initialized for patient: ${widget.patientId}');
+  }
+  
+  @override
+  void dispose() {
+    _queueManager.removeListener(_onQueueUpdate);
+    print('🛑 [CameraScreen] Disposed');
+    super.dispose();
+  }
+  
+  void _onQueueUpdate() {
+    if (mounted) {
+      setState(() {}); // Rebuild when queue changes
+    }
   }
 
   Future<void> _startBatch() async {
     try {
-      final response = await ApiService.startDocumentBatch(widget.patientId);
+      print('🚀 [CameraScreen] Starting batch for patient: ${widget.patientId}');
+      
+      final batchId = await _queueManager.startBatch(widget.patientId);
+      
       setState(() {
-        _batchId = response['batch_id'];
+        _batchId = batchId;
       });
-      print('✅ Batch started: $_batchId');
+      
+      print('✅ [CameraScreen] Batch started: $batchId');
     } catch (e) {
-      print('❌ Failed to start batch: $e');
+      print('❌ [CameraScreen] Failed to start batch: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -52,6 +75,8 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _takePicture() async {
+    print('📸 [CameraScreen] Opening camera...');
+    
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
@@ -59,11 +84,16 @@ class _CameraScreenState extends State<CameraScreen> {
       );
 
       if (photo != null) {
+        print('📷 [CameraScreen] Picture captured: ${photo.path}');
+        
         setState(() {
           _imageFile = photo;
         });
+      } else {
+        print('⚠️ [CameraScreen] No photo captured (user cancelled)');
       }
     } catch (e) {
+      print('❌ [CameraScreen] Camera error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -75,66 +105,63 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _uploadImage() async {
-    if (_imageFile == null || _batchId == null) return;
+    if (_imageFile == null || _batchId == null) {
+      print('⚠️ [CameraScreen] Cannot upload: imageFile=${_imageFile != null}, batchId=${_batchId != null}');
+      return;
+    }
 
-    setState(() {
-      _isUploading = true;
-    });
-
+    print('📤 [CameraScreen] Adding image to upload queue...');
+    
     try {
-      // Read file
       final file = File(_imageFile!.path);
-      final fileBytes = await file.readAsBytes();
-      final fileName = 'prescription_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-      print('📸 Uploading document to batch: $_batchId');
-
-      // Upload to batch
-      final response = await ApiService.uploadDocumentToBatch(
+      
+      // Add to queue - this is NON-BLOCKING!
+      final taskId = _queueManager.addToQueue(
         patientId: widget.patientId,
         batchId: _batchId!,
-        fileBytes: fileBytes,
-        fileName: fileName,
+        file: file,
       );
 
-      print('✅ Document uploaded: ${response['document_id']}');
+      print('✅ [CameraScreen] Added to queue with task ID: $taskId');
 
       setState(() {
         _documentCount++;
-        _uploadedDocuments.add(response);
-        _imageFile = null; // Clear for next photo
+        _imageFile = null; // Clear immediately for next scan
       });
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Document ${response['document_number']} uploaded!'),
+          content: Row(
+            children: [
+              Icon(Icons.cloud_queue, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text('Document $_documentCount queued for upload')),
+            ],
+          ),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 2),
         ),
       );
+      
+      print('🎯 [CameraScreen] UI cleared, ready for next document');
     } catch (e) {
-      print('❌ Upload error: $e');
+      print('❌ [CameraScreen] Failed to add to queue: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Upload error: $e'),
+          content: Text('Failed to queue upload: $e'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 5),
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
-      }
     }
   }
 
   Future<void> _completeScanning() async {
     if (_batchId == null || _documentCount == 0) {
+      print('⚠️ [CameraScreen] Cannot complete: batchId=${_batchId != null}, documentCount=$_documentCount');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please scan at least one document'),
@@ -144,19 +171,96 @@ class _CameraScreenState extends State<CameraScreen> {
       return;
     }
 
+    final batch = _queueManager.getBatch(_batchId!);
+    if (batch == null) {
+      print('❌ [CameraScreen] Batch not found: $_batchId');
+      return;
+    }
+
+    // Check if uploads are still pending
+    if (batch.pendingTasks > 0 || _queueManager.isProcessing) {
+      print('⚠️ [CameraScreen] Uploads still in progress: pending=${batch.pendingTasks}, processing=${_queueManager.isProcessing}');
+      
+      final shouldWait = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.upload, color: Colors.orange),
+              SizedBox(width: 8),
+              Expanded(child: Text('Uploads in Progress')),
+            ],
+          ),
+          content: Text(
+            '${batch.pendingTasks} document(s) are still uploading.\n\n'
+            'Would you like to wait for completion?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                print('👤 [CameraScreen] User chose to wait');
+                Navigator.pop(context, true);
+              },
+              child: const Text('Wait'),
+            ),
+            TextButton(
+              onPressed: () {
+                print('👤 [CameraScreen] User chose to complete anyway');
+                Navigator.pop(context, false);
+              },
+              child: const Text('Complete Anyway'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldWait == null) return; // Dialog dismissed
+      
+      if (shouldWait) {
+        // Show waiting indicator
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                SizedBox(width: 12),
+                Text('Waiting for uploads to complete...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+        
+        // Wait for uploads to complete (max 30 seconds)
+        int waitCount = 0;
+        while (batch.pendingTasks > 0 && waitCount < 30) {
+          await Future.delayed(Duration(seconds: 1));
+          waitCount++;
+          print('⏳ [CameraScreen] Waiting... ${batch.pendingTasks} remaining (${waitCount}s)');
+        }
+      }
+    }
+
     setState(() {
-      _isUploading = true;
+      _isCompletingBatch = true;
     });
 
     try {
-      print('🎯 Completing batch and generating timeline...');
+      print('🎯 [CameraScreen] Completing batch and generating timeline...');
+      print('📊 [CameraScreen] Batch stats: ${batch.completedTasks}/${batch.totalTasks} completed, ${batch.failedTasks} failed');
 
-      final response = await ApiService.completeBatchAndGenerateTimeline(
-        patientId: widget.patientId,
-        batchId: _batchId!,
-      );
+      final response = await _queueManager.completeBatch(_batchId!);
 
-      print('✅ Timeline generated!');
+      setState(() {
+        _isCompletingBatch = false;
+      });
+
+      print('✅ [CameraScreen] Timeline generated successfully!');
 
       if (!mounted) return;
 
@@ -206,6 +310,7 @@ class _CameraScreenState extends State<CameraScreen> {
           actions: [
             ElevatedButton(
               onPressed: () {
+                print('✅ [CameraScreen] User completed workflow, returning to home');
                 Navigator.of(context).popUntil((route) => route.isFirst);
               },
               style: ElevatedButton.styleFrom(
@@ -218,7 +323,11 @@ class _CameraScreenState extends State<CameraScreen> {
         ),
       );
     } catch (e) {
-      print('❌ Complete error: $e');
+      print('❌ [CameraScreen] Failed to complete batch: $e');
+      setState(() {
+        _isCompletingBatch = false;
+      });
+      
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -227,12 +336,6 @@ class _CameraScreenState extends State<CameraScreen> {
           duration: const Duration(seconds: 5),
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
-      }
     }
   }
 
@@ -258,11 +361,39 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final batch = _batchId != null ? _queueManager.getBatch(_batchId!) : null;
+    final isUploading = _queueManager.isProcessing;
+    final isPaused = _queueManager.isPaused;
+    final totalUploaded = batch?.completedTasks ?? 0;
+    final totalFailed = batch?.failedTasks ?? 0;
+    final totalPending = batch?.pendingTasks ?? 0;
+    final overallProgress = batch?.overallProgress ?? 0.0;
+    
     return Scaffold(
       appBar: AppBar(
         title: Text('Scan Document - ${widget.patientName}'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        actions: [
+          // Pause/Resume button
+          if (_documentCount > 0 && (isUploading || isPaused))
+            IconButton(
+              icon: Icon(
+                isPaused ? Icons.play_arrow : Icons.pause,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                if (isPaused) {
+                  print('▶️ [CameraScreen] Resume uploads');
+                  _queueManager.resumeQueue();
+                } else {
+                  print('⏸️ [CameraScreen] Pause uploads');
+                  _queueManager.pauseQueue();
+                }
+              },
+              tooltip: isPaused ? 'Resume' : 'Pause',
+            ),
+        ],
       ),
       body: Center(
         child: Padding(
@@ -309,6 +440,85 @@ class _CameraScreenState extends State<CameraScreen> {
                             ),
                           ),
                         ),
+                        // Upload status indicator
+                        if (_documentCount > 0) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isUploading 
+                                  ? Colors.blue[50]
+                                  : isPaused
+                                      ? Colors.orange[50]
+                                      : Colors.green[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isUploading 
+                                    ? Colors.blue
+                                    : isPaused
+                                        ? Colors.orange
+                                        : Colors.green,
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isUploading
+                                          ? Icons.cloud_upload
+                                          : isPaused
+                                              ? Icons.pause_circle
+                                              : Icons.check_circle,
+                                      size: 16,
+                                      color: isUploading 
+                                          ? Colors.blue
+                                          : isPaused
+                                              ? Colors.orange
+                                              : Colors.green,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      isUploading
+                                          ? 'Uploading...'
+                                          : isPaused
+                                              ? 'Paused'
+                                              : 'All uploads complete',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isUploading 
+                                            ? Colors.blue[900]
+                                            : isPaused
+                                                ? Colors.orange[900]
+                                                : Colors.green[900],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  '✓ $totalUploaded | ⏳ $totalPending' + 
+                                  (totalFailed > 0 ? ' | ✗ $totalFailed' : ''),
+                                  style: TextStyle(fontSize: 10, color: Colors.grey[700]),
+                                ),
+                                if (overallProgress > 0 && overallProgress < 1) ...[
+                                  SizedBox(height: 6),
+                                  LinearProgressIndicator(
+                                    value: overallProgress,
+                                    backgroundColor: Colors.grey[300],
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      isUploading ? Colors.blue : Colors.green,
+                                    ),
+                                    minHeight: 3,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ],
                   ),
@@ -356,98 +566,109 @@ class _CameraScreenState extends State<CameraScreen> {
               
               const SizedBox(height: 32),
               
-              // Camera Button
-              if (_imageFile == null)
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton.icon(
-                    onPressed: _takePicture,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text(
-                      'Capture Prescription',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                )
-              else
-                Column(
-                  children: [
-                    // Upload Button
-                    SizedBox(
-                      width: double.infinity,
+              // Main Action Buttons
+              Row(
+                children: [
+                  // Camera Button
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox(
                       height: 56,
                       child: ElevatedButton.icon(
-                        onPressed: _isUploading ? null : _uploadImage,
-                        icon: _isUploading
+                        onPressed: _imageFile == null ? _takePicture : _uploadImage,
+                        icon: Icon(_imageFile == null ? Icons.camera_alt : Icons.cloud_queue),
+                        label: Text(
+                          _imageFile == null ? 'Scan Document' : 'Queue Upload',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _imageFile == null ? Colors.blue : Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Done Button - ALWAYS VISIBLE
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: _isCompletingBatch 
+                            ? null 
+                            : (_documentCount > 0 ? _completeScanning : null),
+                        icon: _isCompletingBatch
                             ? const SizedBox(
-                                width: 24,
-                                height: 24,
+                                width: 16,
+                                height: 16,
                                 child: CircularProgressIndicator(
                                   color: Colors.white,
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.cloud_upload),
+                            : const Icon(Icons.check_circle, size: 20),
                         label: Text(
-                          _isUploading ? 'Uploading...' : 'Upload Document',
-                          style: const TextStyle(fontSize: 18),
+                          _isCompletingBatch ? 'Processing...' : 'Done',
+                          style: const TextStyle(fontSize: 16),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: Colors.orange,
                           foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey[300],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    // Scan Another Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: OutlinedButton.icon(
-                        onPressed: _isUploading ? null : _takePicture,
-                        icon: const Icon(Icons.camera_alt),
-                        label: const Text(
-                          'Scan Another',
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ),
-                    ),
-                    if (_documentCount > 0) ...[
-                      const SizedBox(height: 16),
-                      // Complete Scanning Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton.icon(
-                          onPressed: _isUploading ? null : _completeScanning,
-                          icon: const Icon(Icons.check_circle),
-                          label: const Text(
-                            'Complete & Generate Timeline',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Helper text
+              if (_documentCount == 0)
+                Text(
+                  'Tap "Scan Document" to start',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Scanned $_documentCount document${_documentCount != 1 ? "s" : ""}. Tap "Done" when finished to generate timeline.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue[900],
                           ),
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
               // Skip button
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  print('🔙 [CameraScreen] User skipped, returning to previous screen');
+                  Navigator.of(context).pop();
                 },
-                child: const Text('Skip & Finish'),
+                child: const Text('Cancel & Go Back'),
               ),
             ],
           ),

@@ -207,6 +207,11 @@ class ApiService {
 
   // ==================== NOTES & HISTORY ====================
   
+  /// Get all SOAP notes for a patient
+  static Future<Map<String, dynamic>> getSoapNotes(String patientId) async {
+    return getPatientNotes(patientId);
+  }
+  
   /// Get all notes for a patient
   static Future<Map<String, dynamic>> getPatientNotes(String patientId) async {
     try {
