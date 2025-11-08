@@ -25,6 +25,23 @@ async def generate_comprehensive_timeline(documents: List[Dict], patient_info: D
         if doc.get('extracted_data'):
             all_prescriptions.append(doc['extracted_data'])
     
+    print("=" * 80)
+    print("📋 TIMELINE GENERATION - INPUT DATA")
+    print("=" * 80)
+    print(f"Patient: {patient_info.get('name')} (Age: {patient_info.get('age')})")
+    print(f"Total documents: {len(documents)}")
+    print(f"Documents with extracted data: {len(all_prescriptions)}")
+    print("\n🔍 EXTRACTED PRESCRIPTIONS:")
+    for i, presc in enumerate(all_prescriptions, 1):
+        print(f"\n--- Prescription {i} ---")
+        print(f"  Doctor: {presc.get('doctor_name', 'Unknown')}")
+        print(f"  Date: {presc.get('date', 'Unknown')}")
+        print(f"  Diagnosis: {presc.get('diagnosis', 'Unknown')}")
+        print(f"  Medications: {len(presc.get('medications', []))}")
+        for med in presc.get('medications', []):
+            print(f"    - {med.get('name')}: {med.get('dosage')} {med.get('frequency')}")
+    print("=" * 80)
+    
     # Create comprehensive prompt for Gemini
     prompt = f"""You are a medical data analyst. Analyze these prescription documents and create a comprehensive medical timeline.
 
@@ -85,11 +102,24 @@ Important:
 """
     
     try:
-        print("Generating comprehensive timeline with Gemini...")
+        print("\n" + "=" * 80)
+        print("🤖 SENDING TO GEMINI - FULL PROMPT")
+        print("=" * 80)
+        print(prompt)
+        print("=" * 80)
+        print("\n🔄 Calling Gemini API...")
         
         model = genai.GenerativeModel('gemini-2.0-flash-exp')
         response = model.generate_content(prompt)
         text = response.text.strip()
+        
+        print("\n" + "=" * 80)
+        print("📥 GEMINI RESPONSE - RAW TEXT")
+        print("=" * 80)
+        print(text[:1000])  # First 1000 chars
+        if len(text) > 1000:
+            print(f"\n... (response truncated, total {len(text)} chars)")
+        print("=" * 80)
         
         # Clean markdown if present
         if text.startswith('```'):
@@ -99,7 +129,16 @@ Important:
             text = text.strip()
         
         timeline_data = json.loads(text)
-        print(f"✅ Timeline generated: {len(timeline_data.get('timeline_events', []))} events")
+        
+        print("\n" + "=" * 80)
+        print("✅ PARSED TIMELINE DATA")
+        print("=" * 80)
+        print(f"Timeline events: {len(timeline_data.get('timeline_events', []))}")
+        print(f"Current medications: {len(timeline_data.get('current_medications', []))}")
+        print(f"Chronic conditions: {len(timeline_data.get('chronic_conditions', []))}")
+        print(f"Allergies: {len(timeline_data.get('allergies', []))}")
+        print(f"Has summary: {bool(timeline_data.get('summary'))}")
+        print("=" * 80 + "\n")
         
         return timeline_data
     

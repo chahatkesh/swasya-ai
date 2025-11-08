@@ -37,5 +37,42 @@
       "event_count": 2,
       "current_medications_count": 2
     }
+  ],
+  "PAT_B396D915": [
+    {
+      "history_id": "TIMELINE_437C348E",
+      "patient_id": "PAT_B396D915",
+      "created_at": "2025-11-08T13:34:14.900996",
+      "batch_id": "BATCH_00E5586D",
+      "type": "comprehensive_timeline",
+      "document_count": 4,
+      "timeline_summary": "Rishi2, a 20-year-old patient, has been diagnosed with diabetes and elevated blood pressure, for which they have been prescribed Tripride-2-forte and Lipikind-10. They also experience lower back pain due to small damage in their spine and are on Pentop DSR, Vitamin E, and Calcium. ",
+      "event_count": 4,
+      "current_medications_count": 5
+    },
+    {
+      "history_id": "TIMELINE_01871A90",
+      "patient_id": "PAT_B396D915",
+      "created_at": "2025-11-08T13:48:03.302672",
+      "batch_id": "BATCH_2BDD8F29",
+      "type": "comprehensive_timeline",
+      "document_count": 1,
+      "timeline_summary": "Patient has 1 prescription documents on file. Individual analysis completed.",
+      "event_count": 1,
+      "current_medications_count": 0
+    }
+  ],
+  "PAT_BE5306C8": [
+    {
+      "history_id": "TIMELINE_D0A41EB1",
+      "patient_id": "PAT_BE5306C8",
+      "created_at": "2025-11-08T13:49:31.739534",
+      "batch_id": "BATCH_87CB2FC4",
+      "type": "comprehensive_timeline",
+      "document_count": 1,
+      "timeline_summary": "Patient rishi3, age 19, was diagnosed with Diabetes on 2023-11-02, with a recorded glucose level exceeding 400 and blood pressure of 125 mmHg. The patient has been prescribed Tripide-2-forte 250mg and Lipikind-10 10mg for management of the condition, and further information is needed to understand the dosage frequency.",
+      "event_count": 1,
+      "current_medications_count": 2
+    }
   ]
 }

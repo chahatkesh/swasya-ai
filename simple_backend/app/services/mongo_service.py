@@ -72,7 +72,8 @@ class MongoService:
     async def update_document_status(self, document_id: str, status: str, extracted_data: Optional[Dict] = None):
         """Update document processing status"""
         update_data = {"status": status}
-        if extracted_data:
+        # Always set extracted_data if provided (allow empty dict)
+        if extracted_data is not None:
             update_data["extracted_data"] = extracted_data
         
         await self.db.documents.update_one(

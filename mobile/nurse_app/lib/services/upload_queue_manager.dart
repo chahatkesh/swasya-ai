@@ -280,13 +280,47 @@ class UploadQueueManager extends ChangeNotifier {
   }
 
   /// Complete batch and generate timeline
-  Future<Map<String, dynamic>> completeBatch(String batchId) async {
-    _log('🎯 Completing batch: $batchId');
+  Future<void> completeBatch(String batchId) async {
+    _log('🎯 Marking batch for completion: $batchId');
     
     final batch = _batches[batchId];
     if (batch == null) {
       _log('❌ Batch not found: $batchId');
       throw Exception('Batch not found');
+    }
+
+    _log('📊 Batch status: ${batch.completedTasks}/${batch.totalTasks} completed, ${batch.pendingTasks} pending');
+    
+    // Mark batch as ready for completion (timeline will generate after uploads finish)
+    batch.isCompleted = true;
+    notifyListeners();
+    
+    // Start background timeline generation
+    _generateTimelineWhenReady(batchId);
+  }
+
+  /// Generate timeline in background after all uploads complete
+  Future<void> _generateTimelineWhenReady(String batchId) async {
+    final batch = _batches[batchId];
+    if (batch == null) {
+      _log('❌ Batch not found for timeline generation: $batchId');
+      return;
+    }
+
+    _log('⏳ Waiting for uploads to complete before generating timeline...');
+    
+    // Wait for all uploads to complete (check every second)
+    int waitCount = 0;
+    while (batch.pendingTasks > 0 && waitCount < 60) {  // Max 60 seconds wait
+      await Future.delayed(Duration(seconds: 1));
+      waitCount++;
+      if (waitCount % 5 == 0) {
+        _log('⏳ Still waiting... ${batch.pendingTasks} uploads pending (${waitCount}s)');
+      }
+    }
+
+    if (batch.pendingTasks > 0) {
+      _log('⚠️ Timeout waiting for uploads. Generating timeline with ${batch.completedTasks} documents anyway.');
     }
 
     // Check if all tasks are completed
@@ -297,13 +331,12 @@ class UploadQueueManager extends ChangeNotifier {
     }
 
     try {
-      _log('🧠 Generating timeline with AI...');
+      _log('🧠 Generating timeline with AI for ${batch.completedTasks} documents...');
       final timeline = await ApiService.completeBatchAndGenerateTimeline(
         patientId: batch.patientId,
         batchId: batchId,
       );
       
-      batch.isCompleted = true;
       batch.timelineId = timeline['timeline_id'];
       
       _log('✅ Timeline generated successfully!');
@@ -313,10 +346,9 @@ class UploadQueueManager extends ChangeNotifier {
       _log('🏥 Conditions: ${timeline['timeline']?['chronic_conditions']?.length ?? 0}');
       
       notifyListeners();
-      return timeline;
     } catch (e) {
-      _log('❌ Failed to complete batch: $e');
-      rethrow;
+      _log('❌ Failed to generate timeline: $e');
+      // Don't rethrow - this is background processing
     }
   }
 

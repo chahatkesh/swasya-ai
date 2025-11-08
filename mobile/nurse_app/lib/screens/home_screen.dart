@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/upload_queue_manager.dart';
 import 'patient_detail_screen.dart';
 import 'patient_registration_screen.dart';
 
@@ -14,12 +15,27 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _patients = [];
   bool _isLoading = true;
   String? _error;
+  final UploadQueueManager _queueManager = UploadQueueManager();
 
   @override
   void initState() {
     super.initState();
+    _queueManager.addListener(_onQueueUpdate);
     _loadTodaysPatients();
     print('🏠 [HomeScreen] Initialized');
+  }
+
+  @override
+  void dispose() {
+    _queueManager.removeListener(_onQueueUpdate);
+    super.dispose();
+  }
+
+  void _onQueueUpdate() {
+    // Rebuild UI when upload queue changes
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _loadTodaysPatients() async {
@@ -57,6 +73,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getPatientStatus(Map<String, dynamic> patient) {
+    // Honor optimistic local status when present
+    if (patient.containsKey('__local_status')) {
+      return patient['__local_status'];
+    }
+    final patientId = patient['patient_id'];
+    
+    // Check if patient has active batch being processed
+    final activeBatches = _queueManager.allBatches
+        .where((b) => b.patientId == patientId && b.isCompleted && b.pendingTasks == 0 && b.timelineId == null)
+        .toList();
+    
+    if (activeBatches.isNotEmpty) {
+      return 'generating'; // Timeline being generated
+    }
+    
+    // Check if uploads are in progress
+    final uploadingBatches = _queueManager.allBatches
+        .where((b) => b.patientId == patientId && !b.isCompleted && (b.pendingTasks > 0 || _queueManager.isProcessing))
+        .toList();
+    
+    if (uploadingBatches.isNotEmpty) {
+      return 'uploading'; // Documents being uploaded
+    }
+    
     // Determine status based on available data
     final hasNotes = patient['notes_count'] != null && patient['notes_count'] > 0;
     final hasHistory = patient['history_count'] != null && patient['history_count'] > 0;
@@ -70,6 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (status) {
       case 'completed':
         return Icons.check_circle;
+      case 'generating':
+        return Icons.auto_awesome;
+      case 'uploading':
+        return Icons.cloud_upload;
       case 'processing':
         return Icons.pending;
       default:
@@ -81,6 +125,10 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (status) {
       case 'completed':
         return Colors.green;
+      case 'generating':
+        return Colors.purple;
+      case 'uploading':
+        return Colors.blue;
       case 'processing':
         return Colors.orange;
       default:
@@ -92,6 +140,10 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (status) {
       case 'completed':
         return 'Completed';
+      case 'generating':
+        return 'Generating Timeline';
+      case 'uploading':
+        return 'Uploading';
       case 'processing':
         return 'In Progress';
       default:
@@ -111,9 +163,24 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     ).then((_) {
-      // Refresh queue when returning
-      print('🔄 [HomeScreen] Returned from patient detail, refreshing...');
-      _loadTodaysPatients();
+      // Optimistic update: mark patient as processing immediately so nurse isn't blocked by network
+      print('🔄 [HomeScreen] Returned from patient detail, applying optimistic status and scheduling refresh...');
+      final pid = patient['patient_id'];
+      setState(() {
+        final idx = _patients.indexWhere((p) => p['patient_id'] == pid);
+        if (idx != -1) {
+          // Add a lightweight local status to show immediate feedback
+          final updated = Map<String, dynamic>.from(_patients[idx]);
+          updated['__local_status'] = 'uploading';
+          _patients[idx] = updated;
+        }
+      });
+
+      // Refresh the full list in background after a short delay (won't block UI)
+      Future.delayed(const Duration(seconds: 2), () {
+        print('🔁 [HomeScreen] Performing background refresh of patient list');
+        _loadTodaysPatients();
+      });
     });
   }
 
@@ -286,13 +353,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                       horizontal: 16,
                                       vertical: 12,
                                     ),
-                                    leading: CircleAvatar(
-                                      backgroundColor: _getStatusColor(status),
-                                      child: Icon(
-                                        _getStatusIcon(status),
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                                    leading: status == 'uploading' || status == 'generating'
+                                        ? SizedBox(
+                                            width: 40,
+                                            height: 40,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 3,
+                                              valueColor: AlwaysStoppedAnimation<Color>(
+                                                _getStatusColor(status),
+                                              ),
+                                            ),
+                                          )
+                                        : CircleAvatar(
+                                            backgroundColor: _getStatusColor(status),
+                                            child: Icon(
+                                              _getStatusIcon(status),
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                     title: Text(
                                       patient['name'] ?? 'Unknown',
                                       style: const TextStyle(

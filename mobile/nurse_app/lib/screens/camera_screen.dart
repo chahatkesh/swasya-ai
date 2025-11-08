@@ -25,6 +25,7 @@ class _CameraScreenState extends State<CameraScreen> {
   String? _batchId;
   int _documentCount = 0;
   bool _isCompletingBatch = false;
+  bool _isUploading = false; // Prevent double-click uploads
 
   @override
   void initState() {
@@ -110,6 +111,13 @@ class _CameraScreenState extends State<CameraScreen> {
       return;
     }
 
+    // Prevent double-click uploads
+    if (_isUploading) {
+      print('⚠️ [CameraScreen] Upload already in progress, ignoring double-click');
+      return;
+    }
+
+    _isUploading = true;
     print('📤 [CameraScreen] Adding image to upload queue...');
     
     try {
@@ -127,6 +135,7 @@ class _CameraScreenState extends State<CameraScreen> {
       setState(() {
         _documentCount++;
         _imageFile = null; // Clear immediately for next scan
+        _isUploading = false; // Re-enable upload button
       });
 
       if (!mounted) return;
@@ -148,6 +157,9 @@ class _CameraScreenState extends State<CameraScreen> {
       print('🎯 [CameraScreen] UI cleared, ready for next document');
     } catch (e) {
       print('❌ [CameraScreen] Failed to add to queue: $e');
+      setState(() {
+        _isUploading = false; // Re-enable on error
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -171,172 +183,92 @@ class _CameraScreenState extends State<CameraScreen> {
       return;
     }
 
-    final batch = _queueManager.getBatch(_batchId!);
-    if (batch == null) {
-      print('❌ [CameraScreen] Batch not found: $_batchId');
-      return;
+    print('✅ [CameraScreen] Nurse completed scanning. Processing will continue in background.');
+    print('📋 [CameraScreen] Batch $_batchId with $_documentCount documents marked for background processing');
+    
+    // Mark batch as ready for timeline generation (will happen after uploads complete)
+    try {
+      await _queueManager.completeBatch(_batchId!);
+      print('✅ [CameraScreen] Batch marked for completion');
+    } catch (e) {
+      print('⚠️ [CameraScreen] Error marking batch complete (uploads will still continue): $e');
     }
 
-    // Check if uploads are still pending
-    if (batch.pendingTasks > 0 || _queueManager.isProcessing) {
-      print('⚠️ [CameraScreen] Uploads still in progress: pending=${batch.pendingTasks}, processing=${_queueManager.isProcessing}');
-      
-      final shouldWait = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.upload, color: Colors.orange),
-              SizedBox(width: 8),
-              Expanded(child: Text('Uploads in Progress')),
-            ],
-          ),
-          content: Text(
-            '${batch.pendingTasks} document(s) are still uploading.\n\n'
-            'Would you like to wait for completion?'
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                print('👤 [CameraScreen] User chose to wait');
-                Navigator.pop(context, true);
-              },
-              child: const Text('Wait'),
-            ),
-            TextButton(
-              onPressed: () {
-                print('👤 [CameraScreen] User chose to complete anyway');
-                Navigator.pop(context, false);
-              },
-              child: const Text('Complete Anyway'),
-            ),
+    if (!mounted) return;
+
+    // Show confirmation and return immediately
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.cloud_upload, color: Colors.blue, size: 28),
+            SizedBox(width: 12),
+            Expanded(child: Text('Processing Started')),
           ],
         ),
-      );
-      
-      if (shouldWait == null) return; // Dialog dismissed
-      
-      if (shouldWait) {
-        // Show waiting indicator
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                ),
-                SizedBox(width: 12),
-                Text('Waiting for uploads to complete...'),
-              ],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Documents will be processed in the background.',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
-            duration: Duration(seconds: 30),
-          ),
-        );
-        
-        // Wait for uploads to complete (max 30 seconds)
-        int waitCount = 0;
-        while (batch.pendingTasks > 0 && waitCount < 30) {
-          await Future.delayed(Duration(seconds: 1));
-          waitCount++;
-          print('⏳ [CameraScreen] Waiting... ${batch.pendingTasks} remaining (${waitCount}s)');
-        }
-      }
-    }
-
-    setState(() {
-      _isCompletingBatch = true;
-    });
-
-    try {
-      print('🎯 [CameraScreen] Completing batch and generating timeline...');
-      print('📊 [CameraScreen] Batch stats: ${batch.completedTasks}/${batch.totalTasks} completed, ${batch.failedTasks} failed');
-
-      final response = await _queueManager.completeBatch(_batchId!);
-
-      setState(() {
-        _isCompletingBatch = false;
-      });
-
-      print('✅ [CameraScreen] Timeline generated successfully!');
-
-      if (!mounted) return;
-
-      // Show timeline summary
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.timeline, color: Colors.blue, size: 32),
-              SizedBox(width: 8),
-              Expanded(child: Text('Timeline Generated!')),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Patient: ${widget.patientName}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 8),
-                _buildStat('Documents Processed', '${response['statistics']['documents_processed']}'),
-                _buildStat('Timeline Events', '${response['statistics']['timeline_events']}'),
-                _buildStat('Current Medications', '${response['statistics']['current_medications']}'),
-                _buildStat('Chronic Conditions', '${response['statistics']['chronic_conditions']}'),
-                const SizedBox(height: 16),
-                if (response['timeline']?['summary'] != null) ...[
-                  const Text(
-                    'Summary:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    response['timeline']['summary'],
-                    style: const TextStyle(fontSize: 12, height: 1.4),
+            SizedBox(height: 16),
+            Text(
+              '✓ $_documentCount document(s) queued',
+              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '✓ Timeline will be generated automatically',
+              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '✓ You can continue with next patient',
+              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+            ),
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 18, color: Colors.blue[700]),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Patient will show "Processing" status on home screen',
+                      style: TextStyle(fontSize: 12, color: Colors.blue[900]),
+                    ),
                   ),
                 ],
-              ],
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                print('✅ [CameraScreen] User completed workflow, returning to home');
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
               ),
-              child: const Text('Done'),
             ),
           ],
         ),
-      );
-    } catch (e) {
-      print('❌ [CameraScreen] Failed to complete batch: $e');
-      setState(() {
-        _isCompletingBatch = false;
-      });
-      
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to generate timeline: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    }
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              print('✅ [CameraScreen] Returning to home screen');
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: Text('Continue'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStat(String label, String value) {
@@ -500,8 +432,7 @@ class _CameraScreenState extends State<CameraScreen> {
                                 ),
                                 SizedBox(height: 6),
                                 Text(
-                                  '✓ $totalUploaded | ⏳ $totalPending' + 
-                                  (totalFailed > 0 ? ' | ✗ $totalFailed' : ''),
+                                  '✓ $totalUploaded | ⏳ $totalPending${totalFailed > 0 ? ' | ✗ $totalFailed' : ''}',
                                   style: TextStyle(fontSize: 10, color: Colors.grey[700]),
                                 ),
                                 if (overallProgress > 0 && overallProgress < 1) ...[

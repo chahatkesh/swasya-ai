@@ -134,11 +134,20 @@ async def upload_document_to_batch(
         image_filename = f"{patient_id}_{document_id}.{file_extension}"
         image_path = os.path.join(UPLOADS_DIR, image_filename)
         
+        print("\n" + "🟢" * 40)
+        print(f"📤 NEW DOCUMENT UPLOAD")
+        print(f"   Document ID: {document_id}")
+        print(f"   Patient: {patient['name']} ({patient_id})")
+        print(f"   Batch ID: {batch_id}")
+        print(f"   Filename: {file.filename}")
+        print(f"   Saved as: {image_filename}")
+        print("🟢" * 40 + "\n")
+        
         with open(image_path, "wb") as f:
             content = await file.read()
             f.write(content)
         
-        print(f"📄 Saved document: {image_filename}")
+        print(f"✅ File saved to disk: {image_path}")
         
         # Create document record
         document_data = {
@@ -231,7 +240,15 @@ async def complete_batch_and_generate_timeline(patient_id: str, batch_id: Option
         if not documents:
             raise HTTPException(status_code=400, detail="No documents in batch")
         
-        print(f"📊 Generating timeline from {len(documents)} documents...")
+        print("\n" + "🔵" * 40)
+        print(f"📊 BATCH COMPLETION - Starting timeline generation")
+        print(f"   Patient: {patient['name']} ({patient_id})")
+        print(f"   Batch ID: {batch_id}")
+        print(f"   Documents in batch: {len(documents)}")
+        for i, doc in enumerate(documents, 1):
+            print(f"   Doc {i}: {doc.get('document_id')} - uploaded at {doc.get('uploaded_at', 'unknown')}")
+            print(f"           Has extracted_data: {bool(doc.get('extracted_data'))}")
+        print("🔵" * 40 + "\n")
         
         # Update batch status
         await mongo_service.update_batch_status(batch_id, "processing")
