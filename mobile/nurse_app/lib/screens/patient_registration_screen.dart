@@ -172,9 +172,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                   prefixIcon: Icon(Icons.wc),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'M', child: Text('Male')),
-                  DropdownMenuItem(value: 'F', child: Text('Female')),
-                  DropdownMenuItem(value: 'O', child: Text('Other')),
+                  DropdownMenuItem(value: 'male', child: Text('Male')),
+                  DropdownMenuItem(value: 'female', child: Text('Female')),
+                  DropdownMenuItem(value: 'other', child: Text('Other')),
                 ],
                 onChanged: (value) {
                   setState(() {

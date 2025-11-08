@@ -1,1 +1,20 @@
-{}
+{
+  "PAT_72D90B86": {
+    "patient_id": "PAT_72D90B86",
+    "name": "Test Patient",
+    "phone": "9876543210",
+    "age": 30,
+    "gender": "male",
+    "created_at": "2025-11-08T12:14:16.072428",
+    "status": "active"
+  },
+  "PAT_1FE660EB": {
+    "patient_id": "PAT_1FE660EB",
+    "name": "rishi",
+    "phone": "9915972220",
+    "age": 19,
+    "gender": "female",
+    "created_at": "2025-11-08T12:16:07.240820",
+    "status": "active"
+  }
+}

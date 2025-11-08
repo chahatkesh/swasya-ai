@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/patient_registration_screen.dart';
+import 'screens/debug_screen.dart';
 
 void main() {
   runApp(const PHCNurseApp());
@@ -89,6 +90,33 @@ class NurseDashboard extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Debug/Test Connection Button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DebugScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.bug_report),
+                  label: const Text(
+                    'Test Backend Connection',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.deepPurple,
+                    side: const BorderSide(color: Colors.deepPurple),
                   ),
                 ),
               ),

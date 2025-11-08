@@ -2,10 +2,12 @@ class Config {
   // Local FastAPI backend - Backend is running at http://localhost:8000
   // For Android Emulator use 10.0.2.2
   // For iOS Simulator use localhost
-  // For Real Device use your computer's IP address
-  static const String apiBaseUrl = 'http://10.0.2.2:8000'; // Android emulator
+  // For Real Device use your computer's IP address (192.168.0.7)
+  
+  // IMPORTANT: Update this based on your device type!
+  static const String apiBaseUrl = 'http://192.168.0.7:8000'; // Real device (YOUR IP)
+  // static const String apiBaseUrl = 'http://10.0.2.2:8000'; // Android emulator
   // static const String apiBaseUrl = 'http://localhost:8000'; // iOS simulator  
-  // static const String apiBaseUrl = 'http://192.168.1.X:8000'; // Real device (replace with your IP)
   
   // API Endpoints - Updated for new modular backend
   static const String patientsEndpoint = '$apiBaseUrl/patients';

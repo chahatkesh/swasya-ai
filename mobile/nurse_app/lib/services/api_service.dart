@@ -305,4 +305,96 @@ class ApiService {
       return false;
     }
   }
+
+  // ==================== MULTI-DOCUMENT SCANNING ====================
+  
+  /// Start document scanning batch
+  static Future<Map<String, dynamic>> startDocumentBatch(String patientId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${Config.apiBaseUrl}/documents/$patientId/start-batch'),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to start batch: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error starting batch: $e');
+    }
+  }
+
+  /// Upload document to batch
+  static Future<Map<String, dynamic>> uploadDocumentToBatch({
+    required String patientId,
+    required String batchId,
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${Config.apiBaseUrl}/documents/$patientId/upload?batch_id=$batchId'),
+      );
+      
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          fileBytes,
+          filename: fileName,
+        ),
+      );
+      
+      print('Uploading document to batch: $batchId');
+      
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Upload failed: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error uploading document: $e');
+    }
+  }
+
+  /// Complete batch and generate timeline
+  static Future<Map<String, dynamic>> completeBatchAndGenerateTimeline({
+    required String patientId,
+    required String batchId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${Config.apiBaseUrl}/documents/$patientId/complete-batch?batch_id=$batchId'),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to complete batch: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error completing batch: $e');
+    }
+  }
+
+  /// Get patient timeline
+  static Future<Map<String, dynamic>> getPatientTimeline(String patientId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${Config.apiBaseUrl}/documents/$patientId/timeline'),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to get timeline: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error getting timeline: $e');
+    }
+  }
 }

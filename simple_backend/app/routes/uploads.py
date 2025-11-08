@@ -45,12 +45,17 @@ async def upload_audio(patient_id: str, file: UploadFile = File(...)):
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
-    # Validate file type
-    allowed_types = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/ogg', 'audio/x-m4a']
-    if file.content_type not in allowed_types:
+    # Validate file type - check both content type and extension
+    allowed_content_types = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/m4a', 'audio/mp3']
+    allowed_extensions = ['mp3', 'm4a', 'wav', 'ogg', 'mp4']
+    
+    file_extension = file.filename.split('.')[-1].lower() if file.filename else ''
+    
+    # Accept if either content type matches OR extension matches
+    if file.content_type not in allowed_content_types and file_extension not in allowed_extensions:
         raise HTTPException(
             status_code=400, 
-            detail=f"Invalid file type. Allowed: mp3, m4a, wav, ogg"
+            detail=f"Invalid file type. Content-Type: {file.content_type}, Extension: {file_extension}. Allowed: mp3, m4a, wav, ogg"
         )
     
     try:
@@ -133,12 +138,17 @@ async def upload_prescription_image(patient_id: str, file: UploadFile = File(...
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
-    # Validate file type
-    allowed_types = ['image/jpeg', 'image/png', 'image/jpg']
-    if file.content_type not in allowed_types:
+    # Validate file type - check both content type and extension
+    allowed_content_types = ['image/jpeg', 'image/png', 'image/jpg']
+    allowed_extensions = ['jpg', 'jpeg', 'png']
+    
+    file_extension = file.filename.split('.')[-1].lower() if file.filename else ''
+    
+    # Accept if either content type matches OR extension matches
+    if file.content_type not in allowed_content_types and file_extension not in allowed_extensions:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid file type. Allowed: jpg, jpeg, png"
+            detail=f"Invalid file type. Content-Type: {file.content_type}, Extension: {file_extension}. Allowed: jpg, jpeg, png"
         )
     
     try:
