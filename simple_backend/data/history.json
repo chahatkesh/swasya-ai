@@ -1,1 +1,41 @@
-{}
+{
+  "PAT_1FE660EB": [
+    {
+      "history_id": "TIMELINE_10CFA0D8",
+      "patient_id": "PAT_1FE660EB",
+      "created_at": "2025-11-08T13:07:38.889451",
+      "batch_id": "BATCH_BC45D072",
+      "type": "comprehensive_timeline",
+      "document_count": 2,
+      "timeline_summary": "Rishi, a 19-year-old patient, was diagnosed with lower back pain and some damage in the spine (L1, L3) around March 15, 2023. He was prescribed Pentop DSR 100mg, Vitamin E 200mg, and Calcium (Shelcal) 500mg. The frequency and duration of these medications are currently unknown.",
+      "event_count": 1,
+      "current_medications_count": 3
+    }
+  ],
+  "PAT_72D90B86": [
+    {
+      "history_id": "TIMELINE_8F4524E3",
+      "patient_id": "PAT_72D90B86",
+      "created_at": "2025-11-08T13:11:41.233184",
+      "batch_id": "BATCH_AE52F766",
+      "type": "comprehensive_timeline",
+      "document_count": 4,
+      "timeline_summary": "The patient, age 30, has a history of lower back pain with some damage found in the L1 and L3 vertebrae. Medications prescribed include DSR-Pentop, Vitamin E, Calcium (Shelcal), and Lipikind-10 as of March 15, 2023, however, dosage frequencies and durations are missing from the provided records.",
+      "event_count": 2,
+      "current_medications_count": 4
+    }
+  ],
+  "PAT_7908B66F": [
+    {
+      "history_id": "TIMELINE_25C7708B",
+      "patient_id": "PAT_7908B66F",
+      "created_at": "2025-11-08T13:13:11.713419",
+      "batch_id": "BATCH_944A1DE3",
+      "type": "comprehensive_timeline",
+      "document_count": 2,
+      "timeline_summary": "Rishi, a 19-year-old patient, was diagnosed with diabetes and hypertension in November 2023, indicated by a high blood glucose level of 400+ and blood pressure of 125 mmHg. He was prescribed Tripride-2-forte and Lipikind-10. Further information on frequency and duration of medications is required for optimal monitoring.",
+      "event_count": 2,
+      "current_medications_count": 2
+    }
+  ]
+}
