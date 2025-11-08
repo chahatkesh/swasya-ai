@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/core.dart';
 import '../services/api_service.dart';
 import 'camera_screen.dart';
 import 'record_audio_screen.dart';
@@ -303,13 +304,24 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     final hasHistory = _patientData != null && _patientData!['history_count'] > 0;
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(widget.patientName),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.secondary,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.patientName,
+          style: AppTypography.h3Card.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: AppColors.primary),
             onPressed: () {
               print('🔄 [PatientDetail] Manual refresh');
               _loadPatientData();
@@ -319,216 +331,372 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Patient Info Card
-                  Card(
-                    elevation: 3,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundColor: Colors.blue[100],
-                            child: Icon(
-                              Icons.person,
-                              size: 50,
-                              color: Colors.blue[700],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            widget.patientName,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'ID: ${widget.patientId}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(AppSpacing.xxl),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.15),
+                        width: 1,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.person_outline,
+                            size: 40,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.lg),
+                        Text(
+                          widget.patientName,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2C3E50),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'ID: ${widget.patientId}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  SizedBox(height: AppSpacing.xxl),
 
-                  // Existing Data Section (Optional - shows what's available)
+                  // Existing Data Section
                   if (hasNotes || hasHistory) ...[
-                    const Text(
-                      'Existing Data',
-                      style: TextStyle(
-                        fontSize: 18,
+                    Text(
+                      'Patient Records',
+                      style: const TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xFF2C3E50),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: AppSpacing.md),
 
                     // SOAP Notes Card
                     if (hasNotes)
-                      Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.green[100],
-                            child: Icon(Icons.note_alt, color: Colors.green),
+                      Container(
+                        margin: EdgeInsets.only(bottom: AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.success.withOpacity(0.3),
+                            width: 1,
                           ),
-                          title: const Text('SOAP Notes (AI Scribe)'),
+                        ),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.sm,
+                          ),
+                          leading: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.note_alt_outlined,
+                              color: AppColors.success,
+                              size: 20,
+                            ),
+                          ),
+                          title: const Text(
+                            'SOAP Notes',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2C3E50),
+                            ),
+                          ),
                           subtitle: Text(
                             '${_patientData!['notes_count']} note(s) available',
-                            style: TextStyle(color: Colors.green[700]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.success,
+                            ),
                           ),
                           trailing: TextButton(
                             onPressed: _viewNotes,
-                            child: const Text('View'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                            ),
+                            child: const Text(
+                              'View',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ),
                       ),
 
-                    if (hasNotes) const SizedBox(height: 8),
-
-                    // Medical History Card
+                    // Medical Timeline Card
                     if (hasHistory)
-                      Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.green[100],
-                            child: Icon(Icons.timeline, color: Colors.green),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.success.withOpacity(0.3),
+                            width: 1,
                           ),
-                          title: const Text('Medical Timeline (AI Digitizer)'),
+                        ),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.sm,
+                          ),
+                          leading: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.timeline_outlined,
+                              color: AppColors.success,
+                              size: 20,
+                            ),
+                          ),
+                          title: const Text(
+                            'Medical Timeline',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2C3E50),
+                            ),
+                          ),
                           subtitle: Text(
                             '${_patientData!['history_count']} timeline(s) available',
-                            style: TextStyle(color: Colors.green[700]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.success,
+                            ),
                           ),
                           trailing: TextButton(
                             onPressed: _viewTimeline,
-                            child: const Text('View'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                            ),
+                            child: const Text(
+                              'View',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ),
                       ),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: AppSpacing.xxl),
                   ],
 
-                  // Action Buttons Section - ALWAYS VISIBLE
+                  // Action Buttons Section
                   Text(
-                    (hasNotes || hasHistory) ? 'Add More Data' : 'Record Patient Data',
+                    (hasNotes || hasHistory) ? 'Record New Data' : 'Start Recording',
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: Color(0xFF2C3E50),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppSpacing.md),
 
                   // AI Scribe Button
-                  SizedBox(
+                  Container(
                     width: double.infinity,
-                    height: 100,
+                    height: 96,
+                    margin: EdgeInsets.only(bottom: AppSpacing.md),
                     child: ElevatedButton(
                       onPressed: _navigateToScribe,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.secondary,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.mic, size: 36),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'AI Scribe',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Record audio consultation',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // AI Digitizer Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 100,
-                    child: ElevatedButton(
-                      onPressed: _navigateToDigitize,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.document_scanner, size: 36),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'AI Digitizer',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Scan prescription documents',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  if (_error != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange),
+                        padding: EdgeInsets.all(AppSpacing.lg),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.warning, color: Colors.orange),
-                          const SizedBox(width: 8),
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: AppColors.secondary.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.mic_outlined,
+                              size: 28,
+                              color: AppColors.secondary,
+                            ),
+                          ),
+                          SizedBox(width: AppSpacing.lg),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'AI Scribe',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.secondary,
+                                  ),
+                                ),
+                                SizedBox(height: AppSpacing.xs - 2),
+                                Text(
+                                  'Record audio consultation',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.secondary.withOpacity(0.85),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 18,
+                            color: AppColors.secondary.withOpacity(0.7),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // AI Digitizer Button
+                  Container(
+                    width: double.infinity,
+                    height: 96,
+                    child: ElevatedButton(
+                      onPressed: _navigateToDigitize,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        foregroundColor: AppColors.secondary,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: EdgeInsets.all(AppSpacing.lg),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: AppColors.secondary.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.document_scanner_outlined,
+                              size: 28,
+                              color: AppColors.secondary,
+                            ),
+                          ),
+                          SizedBox(width: AppSpacing.lg),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'AI Digitizer',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.secondary,
+                                  ),
+                                ),
+                                SizedBox(height: AppSpacing.xs - 2),
+                                Text(
+                                  'Scan prescription documents',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.secondary.withOpacity(0.85),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 18,
+                            color: AppColors.secondary.withOpacity(0.7),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Error Warning
+                  if (_error != null) ...[
+                    SizedBox(height: AppSpacing.lg),
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.warning.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning_outlined,
+                            color: AppColors.warning,
+                            size: 20,
+                          ),
+                          SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Text(
                               'Some data may not be loaded',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.orange[900],
+                                color: AppColors.warning,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),

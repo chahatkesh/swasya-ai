@@ -1,22 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'core/core.dart';
 import 'screens/home_screen.dart';
 
 void main() {
-  runApp(const PHCNurseApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set system UI overlay style
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: AppColors.background,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
+  
+  runApp(const SwasyaAIApp());
 }
 
-class PHCNurseApp extends StatelessWidget {
-  const PHCNurseApp({super.key});
+class SwasyaAIApp extends StatelessWidget {
+  const SwasyaAIApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PHC AI Co-Pilot',
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
       home: const HomeScreen(),
     );
   }

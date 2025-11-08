@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/core.dart';
 import '../services/api_service.dart';
 import 'home_screen.dart';
 
@@ -188,38 +189,91 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Patient Check-in'),
+        backgroundColor: AppColors.secondary,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Patient Check-in',
+          style: AppTypography.h3Card.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(AppSpacing.xxl),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(Icons.badge, size: 64, color: Colors.blue),
-                    const SizedBox(height: 16),
+                    // Header icon
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.badge_outlined,
+                        size: 40,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.lg),
+                    
+                    // Title
                     Text(
                       _patientExists ? 'Welcome Back!' : 'Patient Registration',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      style: AppTypography.h2Section.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: AppSpacing.xs),
+                    Text(
+                      _patientExists 
+                          ? 'Patient found in system' 
+                          : 'Enter UHID to check registration',
+                      style: AppTypography.bodyRegular.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: AppSpacing.xxxl),
 
+                    // UHID Field
                     TextFormField(
                       controller: _uhidController,
+                      style: const TextStyle(fontSize: 15),
                       decoration: InputDecoration(
-                        labelText: 'UHID (Unified Health ID) *',
+                        labelText: 'UHID (Unified Health ID)',
                         hintText: 'Enter government health ID',
-                        prefixIcon: const Icon(Icons.fingerprint),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.search),
-                          onPressed: _checkUHID,
+                        prefixIcon: Icon(
+                          Icons.fingerprint,
+                          color: AppColors.primary,
+                          size: 22,
                         ),
-                        border: const OutlineInputBorder(),
+                        suffixIcon: _uhidController.text.isNotEmpty && !_patientExists
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.search,
+                                  color: AppColors.primary,
+                                  size: 22,
+                                ),
+                                onPressed: _checkUHID,
+                              )
+                            : null,
                       ),
                       enabled: !_patientExists,
                       validator: (value) {
@@ -228,63 +282,86 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                         }
                         return null;
                       },
+                      onChanged: (value) => setState(() {}),
                       onFieldSubmitted: (_) => _checkUHID(),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: AppSpacing.lg),
 
+                    // Check UHID Button
                     if (!_uhidChecked)
                       ElevatedButton.icon(
                         onPressed: _checkUHID,
-                        icon: const Icon(Icons.search),
+                        icon: Icon(Icons.search, size: 20, color: AppColors.secondary),
                         label: const Text('Check UHID'),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.secondary,
+                          padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
 
+                    // Patient Status Banner
                     if (_uhidChecked) ...[
-                      const Divider(height: 32),
-                      
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
-                          color: _patientExists ? Colors.green.shade50 : Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
+                          color: _patientExists 
+                              ? AppColors.success.withOpacity(0.12)
+                              : AppColors.primary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: _patientExists ? Colors.green : Colors.blue,
-                            width: 2,
+                            color: _patientExists ? AppColors.success : AppColors.primary,
+                            width: 1.5,
                           ),
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              _patientExists ? Icons.check_circle : Icons.person_add,
-                              color: _patientExists ? Colors.green : Colors.blue,
+                            Container(
+                              padding: EdgeInsets.all(AppSpacing.sm),
+                              decoration: BoxDecoration(
+                                color: _patientExists 
+                                    ? AppColors.success
+                                    : AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _patientExists ? Icons.check : Icons.person_add_outlined,
+                                color: AppColors.secondary,
+                                size: 20,
+                              ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: Text(
-                                _patientExists ? 'Existing Patient Found' : 'New Patient Registration',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: _patientExists ? Colors.green.shade900 : Colors.blue.shade900,
+                                _patientExists 
+                                    ? 'Existing Patient Found' 
+                                    : 'New Patient Registration',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2C3E50),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: AppSpacing.xxl),
 
+                      // Name Field
                       TextFormField(
                         controller: _nameController,
+                        style: const TextStyle(fontSize: 15),
                         decoration: InputDecoration(
-                          labelText: 'Full Name *',
+                          labelText: 'Full Name',
                           prefixIcon: Icon(
-                            _patientExists ? Icons.lock : Icons.person,
-                            color: _patientExists ? Colors.grey : null,
+                            _patientExists ? Icons.lock_outline : Icons.person_outline,
+                            color: _patientExists ? AppColors.textTertiary : AppColors.primary,
+                            size: 22,
                           ),
-                          border: const OutlineInputBorder(),
                         ),
                         enabled: !_patientExists,
                         validator: (value) {
@@ -294,17 +371,19 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: AppSpacing.lg),
 
+                      // Phone Field
                       TextFormField(
                         controller: _phoneController,
+                        style: const TextStyle(fontSize: 15),
                         decoration: InputDecoration(
-                          labelText: 'Phone Number *',
+                          labelText: 'Phone Number',
                           prefixIcon: Icon(
-                            _patientExists ? Icons.lock : Icons.phone,
-                            color: _patientExists ? Colors.grey : null,
+                            _patientExists ? Icons.lock_outline : Icons.phone_outlined,
+                            color: _patientExists ? AppColors.textTertiary : AppColors.primary,
+                            size: 22,
                           ),
-                          border: const OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.phone,
                         enabled: !_patientExists,
@@ -320,36 +399,39 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: AppSpacing.lg),
 
+                      // Age and Gender Row
                       Row(
                         children: [
                           Expanded(
                             child: TextFormField(
                               controller: _ageController,
+                              style: const TextStyle(fontSize: 15),
                               decoration: InputDecoration(
                                 labelText: 'Age',
                                 prefixIcon: Icon(
-                                  _patientExists ? Icons.lock : Icons.calendar_today,
-                                  color: _patientExists ? Colors.grey : null,
+                                  _patientExists ? Icons.lock_outline : Icons.calendar_today_outlined,
+                                  color: _patientExists ? AppColors.textTertiary : AppColors.primary,
+                                  size: 22,
                                 ),
-                                border: const OutlineInputBorder(),
                               ),
                               keyboardType: TextInputType.number,
                               enabled: !_patientExists,
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          SizedBox(width: AppSpacing.lg),
                           Expanded(
                             child: DropdownButtonFormField<String>(
                               value: _selectedGender,
+                              style: const TextStyle(fontSize: 15, color: Color(0xFF2C3E50)),
                               decoration: InputDecoration(
                                 labelText: 'Gender',
                                 prefixIcon: Icon(
-                                  _patientExists ? Icons.lock : Icons.wc,
-                                  color: _patientExists ? Colors.grey : null,
+                                  _patientExists ? Icons.lock_outline : Icons.wc_outlined,
+                                  color: _patientExists ? AppColors.textTertiary : AppColors.primary,
+                                  size: 22,
                                 ),
-                                border: const OutlineInputBorder(),
                               ),
                               items: const [
                                 DropdownMenuItem(value: 'male', child: Text('Male')),
@@ -365,28 +447,64 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: AppSpacing.xxxl),
 
+                      // Submit Button
                       SizedBox(
-                        height: 56,
+                        height: 52,
                         child: ElevatedButton.icon(
                           onPressed: _patientExists ? _addToQueue : _registerPatient,
-                          icon: Icon(_patientExists ? Icons.playlist_add : Icons.person_add),
-                          label: Text(_patientExists ? 'Add to Queue' : 'Register New Patient'),
+                          icon: Icon(
+                            _patientExists ? Icons.playlist_add : Icons.person_add_outlined,
+                            size: 20,
+                            color: AppColors.secondary,
+                          ),
+                          label: Text(
+                            _patientExists ? 'Add to Queue' : 'Register New Patient',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _patientExists ? Colors.green : Colors.blue,
-                            foregroundColor: Colors.white,
+                            backgroundColor: _patientExists ? AppColors.success : AppColors.primary,
+                            foregroundColor: AppColors.secondary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
                     ],
 
+                    // Helper text
                     if (!_uhidChecked) ...[
-                      const SizedBox(height: 24),
-                      Text(
-                        'Enter the patient\'s UHID to check if they are already registered.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
+                      SizedBox(height: AppSpacing.xxl),
+                      Container(
+                        padding: EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                            SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Text(
+                                'Enter the patient\'s UHID to check if they are already registered.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ],

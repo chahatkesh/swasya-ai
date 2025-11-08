@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/core.dart';
 import '../services/api_service.dart';
 import '../services/upload_queue_manager.dart';
 import 'patient_detail_screen.dart';
@@ -146,30 +147,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'completed':
-        return Colors.green;
+        return AppColors.success;
       case 'generating':
-        return Colors.purple;
+        return AppColors.accent;
       case 'uploading':
-        return Colors.blue;
+        return AppColors.primary;
       case 'processing':
-        return Colors.orange;
+        return AppColors.warning;
       default:
-        return Colors.grey;
-    }
-  }
-
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'completed':
-        return 'Completed';
-      case 'generating':
-        return 'Generating Timeline';
-      case 'uploading':
-        return 'Uploading';
-      case 'processing':
-        return 'In Progress';
-      default:
-        return 'Pending';
+        return AppColors.textTertiary;
     }
   }
 
@@ -209,44 +195,38 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _navigateToRegistration() {
-    print('➕ [HomeScreen] Navigating to patient registration');
-    
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const PatientRegistrationScreen(),
-      ),
-    ).then((_) {
-      // Refresh queue after registration
-      _loadTodaysPatients();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('PHC AI Co-Pilot'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.secondary,
+        elevation: 0,
+        title: Text(
+          AppConstants.appName,
+          style: AppTypography.h3Card.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: AppColors.primary),
             onPressed: () {
               print('🔄 [HomeScreen] Manual refresh triggered');
               _loadTodaysPatients();
             },
             tooltip: 'Refresh',
           ),
+          SizedBox(width: AppSpacing.xs),
         ],
         // Show subtle progress bar when refreshing silently in background
         bottom: _isRefreshing
             ? PreferredSize(
                 preferredSize: const Size.fromHeight(3.0),
-                child: const LinearProgressIndicator(
-                  backgroundColor: Colors.blue,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                child: LinearProgressIndicator(
+                  backgroundColor: AppColors.secondary,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
               )
             : null,
@@ -256,39 +236,45 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text('Loading today\'s patients...'),
+                  CircularProgressIndicator(color: AppColors.primary),
+                  SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'Loading today\'s patients...',
+                    style: AppTypography.bodyRegular,
+                  ),
                 ],
               ),
             )
           : _error != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: EdgeInsets.all(AppSpacing.xxl),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 64, color: Colors.red),
-                        const SizedBox(height: 16),
+                        Icon(
+                          Icons.error_outline,
+                          size: AppSpacing.iconXLarge + 16,
+                          color: AppColors.error,
+                        ),
+                        SizedBox(height: AppSpacing.lg),
                         Text(
                           'Failed to load patients',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTypography.h3Card,
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: AppSpacing.sm),
                         Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey),
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: AppSpacing.xxl),
                         ElevatedButton.icon(
                           onPressed: _loadTodaysPatients,
-                          icon: Icon(Icons.refresh),
-                          label: Text('Retry'),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
                         ),
                       ],
                     ),
@@ -299,69 +285,82 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.people_outline,
-                              size: 80, color: Colors.grey[400]),
-                          const SizedBox(height: 16),
+                          Icon(
+                            Icons.people_outline,
+                            size: AppSpacing.iconXLarge + 32,
+                            color: AppColors.textTertiary,
+                          ),
+                          SizedBox(height: AppSpacing.lg),
                           Text(
                             'No patients today',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[600],
+                            style: AppTypography.h3Card.copyWith(
+                              color: AppColors.textSecondary,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: AppSpacing.sm),
                           Text(
                             'Register a new patient to get started',
-                            style: TextStyle(color: Colors.grey[500]),
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textTertiary,
+                            ),
                           ),
                         ],
                       ),
                     )
                   : RefreshIndicator(
-                      onRefresh: _loadTodaysPatients,
+                      onRefresh: () async {
+                        await _loadTodaysPatients();
+                      },
                       child: Column(
                         children: [
-                          // Header with count
+                          // Header Banner
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(16),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.xl,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: Colors.blue[200]!,
-                                  width: 1,
-                                ),
+                              gradient: LinearGradient(
+                                colors: [AppColors.primary, AppColors.primaryHover],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
                             ),
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Icon(Icons.calendar_today,
-                                    color: Colors.blue[700]),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Today\'s Queue',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[900],
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Today\'s Queue',
+                                      style: AppTypography.h2Section.copyWith(
+                                        color: AppColors.secondary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      '${_patients.length} patient${_patients.length != 1 ? 's' : ''} registered',
+                                      style: AppTypography.bodyRegular.copyWith(
+                                        color: AppColors.secondary.withOpacity(0.9),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const Spacer(),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
+                                  padding: EdgeInsets.all(AppSpacing.lg),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue,
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: AppColors.secondary.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                                   ),
                                   child: Text(
-                                    '${_patients.length} ${_patients.length == 1 ? "patient" : "patients"}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    '${_patients.length}',
+                                    style: AppTypography.h1Hero.copyWith(
+                                      color: AppColors.secondary,
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 32,
                                     ),
                                   ),
                                 ),
@@ -372,93 +371,177 @@ class _HomeScreenState extends State<HomeScreen> {
                           Expanded(
                             child: ListView.builder(
                               itemCount: _patients.length,
-                              padding: const EdgeInsets.all(8),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                                vertical: AppSpacing.md,
+                              ),
                               itemBuilder: (context, index) {
                                 final patient = _patients[index];
                                 final status = _getPatientStatus(patient);
+                                final patientName = patient['name'] ?? 'Unknown Patient';
+                                final uhid = patient['uhid'];
+                                final age = patient['age'];
+                                final gender = patient['gender'];
                                 
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 6,
-                                  ),
-                                  elevation: 2,
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
+                                // Build secondary info line
+                                final List<String> infoItems = [];
+                                if (uhid != null && uhid.toString().isNotEmpty) {
+                                  infoItems.add('UHID: $uhid');
+                                }
+                                if (age != null) {
+                                  infoItems.add('$age yrs');
+                                }
+                                if (gender != null && gender.toString().isNotEmpty) {
+                                  infoItems.add(gender.toString());
+                                }
+                                final secondaryInfo = infoItems.isNotEmpty 
+                                    ? infoItems.join(' • ') 
+                                    : 'No additional info';
+                                
+                                return Container(
+                                  height: 72, // Fixed height - reduced for cleaner look
+                                  margin: EdgeInsets.only(bottom: AppSpacing.md),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondary,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppColors.primary.withOpacity(0.15),
+                                      width: 1,
                                     ),
-                                    leading: status == 'uploading' || status == 'generating'
-                                        ? SizedBox(
-                                            width: 40,
-                                            height: 40,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 3,
-                                              valueColor: AlwaysStoppedAnimation<Color>(
-                                                _getStatusColor(status),
-                                              ),
-                                            ),
-                                          )
-                                        : CircleAvatar(
-                                            backgroundColor: _getStatusColor(status),
-                                            child: Icon(
-                                              _getStatusIcon(status),
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                    title: Text(
-                                      patient['name'] ?? 'Unknown',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.04),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
                                       ),
-                                    ),
-                                    subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'ID: ${patient['patient_id']}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
+                                    ],
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () => _navigateToPatientDetail(patient),
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.lg,
+                                          vertical: AppSpacing.md,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Row(
+                                        child: Row(
                                           children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 2,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: _getStatusColor(status).withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: _getStatusColor(status),
-                                                  width: 1,
-                                                ),
-                                              ),
-                                              child: Text(
-                                                _getStatusText(status),
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: _getStatusColor(status),
-                                                ),
+                                            // Status indicator with animated icon
+                                            TweenAnimationBuilder<double>(
+                                              tween: Tween(begin: 0.0, end: 1.0),
+                                              duration: const Duration(milliseconds: 600),
+                                              curve: Curves.easeOut,
+                                              builder: (context, value, child) {
+                                                return Transform.scale(
+                                                  scale: 0.8 + (value * 0.2),
+                                                  child: Opacity(
+                                                    opacity: value,
+                                                    child: Container(
+                                                      width: 44,
+                                                      height: 44,
+                                                      decoration: BoxDecoration(
+                                                        color: _getStatusColor(status).withOpacity(0.12),
+                                                        borderRadius: BorderRadius.circular(10),
+                                                      ),
+                                                      child: status == 'uploading' || status == 'generating'
+                                                          ? Center(
+                                                              child: SizedBox(
+                                                                width: 22,
+                                                                height: 22,
+                                                                child: CircularProgressIndicator(
+                                                                  strokeWidth: 2.5,
+                                                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                                                    _getStatusColor(status),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            )
+                                                          : Icon(
+                                                              _getStatusIcon(status),
+                                                              color: _getStatusColor(status),
+                                                              size: 22,
+                                                            ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            SizedBox(width: AppSpacing.md),
+                                            
+                                            // Patient details
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  // Patient name
+                                                  Text(
+                                                    patientName,
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Color(0xFF2C3E50),
+                                                      letterSpacing: -0.2,
+                                                      height: 1.2,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 3),
+                                                  
+                                                  // Secondary info (UHID, Age, Gender)
+                                                  Text(
+                                                    secondaryInfo,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: AppColors.textSecondary,
+                                                      letterSpacing: -0.1,
+                                                      height: 1.2,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ],
                                               ),
                                             ),
+                                            
+                                            // Status icon on right (with subtle pulse for active states)
+                                            if (status == 'uploading' || status == 'generating')
+                                              TweenAnimationBuilder<double>(
+                                                tween: Tween(begin: 0.9, end: 1.0),
+                                                duration: const Duration(milliseconds: 800),
+                                                curve: Curves.easeInOut,
+                                                builder: (context, value, child) {
+                                                  return Transform.scale(
+                                                    scale: value,
+                                                    child: Icon(
+                                                      status == 'uploading' 
+                                                          ? Icons.cloud_upload_outlined
+                                                          : Icons.auto_awesome_outlined,
+                                                      color: _getStatusColor(status).withOpacity(0.6),
+                                                      size: 18,
+                                                    ),
+                                                  );
+                                                },
+                                                onEnd: () {
+                                                  // Loop animation
+                                                  if (mounted) {
+                                                    setState(() {});
+                                                  }
+                                                },
+                                              )
+                                            else
+                                              Icon(
+                                                Icons.arrow_forward_ios_rounded,
+                                                color: AppColors.textTertiary.withOpacity(0.5),
+                                                size: 14,
+                                              ),
                                           ],
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                    trailing: Icon(
-                                      Icons.arrow_forward_ios,
-                                      color: Colors.grey[400],
-                                      size: 16,
-                                    ),
-                                    onTap: () => _navigateToPatientDetail(patient),
                                   ),
                                 );
                               },
@@ -468,11 +551,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _navigateToRegistration,
-        icon: const Icon(Icons.person_add),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PatientRegistrationScreen(),
+            ),
+          ).then((_) {
+            _loadTodaysPatients(); // Reload list after registration
+          });
+        },
+        icon: const Icon(Icons.add),
         label: const Text('New Patient'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
       ),
     );
   }
