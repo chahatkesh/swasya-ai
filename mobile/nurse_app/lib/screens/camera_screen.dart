@@ -21,6 +21,35 @@ class _CameraScreenState extends State<CameraScreen> {
   final ImagePicker _picker = ImagePicker();
   XFile? _imageFile;
   bool _isUploading = false;
+  String? _batchId;
+  int _documentCount = 0;
+  List<Map<String, dynamic>> _uploadedDocuments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _startBatch();
+  }
+
+  Future<void> _startBatch() async {
+    try {
+      final response = await ApiService.startDocumentBatch(widget.patientId);
+      setState(() {
+        _batchId = response['batch_id'];
+      });
+      print('✅ Batch started: $_batchId');
+    } catch (e) {
+      print('❌ Failed to start batch: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to start scanning session: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   Future<void> _takePicture() async {
     try {
@@ -46,7 +75,7 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _uploadImage() async {
-    if (_imageFile == null) return;
+    if (_imageFile == null || _batchId == null) return;
 
     setState(() {
       _isUploading = true;
@@ -58,104 +87,31 @@ class _CameraScreenState extends State<CameraScreen> {
       final fileBytes = await file.readAsBytes();
       final fileName = 'prescription_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      print('📸 Uploading image: $fileName');
-      print('📊 Patient ID: ${widget.patientId}');
+      print('📸 Uploading document to batch: $_batchId');
 
-      // Upload directly to backend
-      final response = await ApiService.uploadImage(
+      // Upload to batch
+      final response = await ApiService.uploadDocumentToBatch(
         patientId: widget.patientId,
+        batchId: _batchId!,
         fileBytes: fileBytes,
         fileName: fileName,
       );
 
-      print('✅ Upload successful!');
-      print('💊 Prescription extracted: ${response['prescription_data']}');
+      print('✅ Document uploaded: ${response['document_id']}');
+
+      setState(() {
+        _documentCount++;
+        _uploadedDocuments.add(response);
+        _imageFile = null; // Clear for next photo
+      });
 
       if (!mounted) return;
 
-      // Show success dialog with prescription data
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 32),
-              SizedBox(width: 8),
-              Expanded(child: Text('Prescription Extracted!')),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Patient: ${widget.patientName}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                if (response['prescription_data'] != null) ...[
-                  const Text(
-                    'Extracted Information:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  if (response['prescription_data']['doctor_name'] != null)
-                    Text(
-                      'Doctor: ${response['prescription_data']['doctor_name']}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  if (response['prescription_data']['date'] != null)
-                    Text(
-                      'Date: ${response['prescription_data']['date']}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Medications:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
-                  if (response['prescription_data']['medications'] != null)
-                    ...List.generate(
-                      (response['prescription_data']['medications'] as List).length,
-                      (index) {
-                        final med = response['prescription_data']['medications'][index];
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 8, top: 4),
-                          child: Text(
-                            '• ${med['name'] ?? 'Unknown'} ${med['dosage'] ?? ''}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        );
-                      },
-                    ),
-                ],
-                const SizedBox(height: 16),
-                const Text(
-                  'Data saved to patient history!',
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                // Go back to home
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Done'),
-            ),
-          ],
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Document ${response['document_number']} uploaded!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
         ),
       );
     } catch (e) {
@@ -175,6 +131,129 @@ class _CameraScreenState extends State<CameraScreen> {
         });
       }
     }
+  }
+
+  Future<void> _completeScanning() async {
+    if (_batchId == null || _documentCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please scan at least one document'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      print('🎯 Completing batch and generating timeline...');
+
+      final response = await ApiService.completeBatchAndGenerateTimeline(
+        patientId: widget.patientId,
+        batchId: _batchId!,
+      );
+
+      print('✅ Timeline generated!');
+
+      if (!mounted) return;
+
+      // Show timeline summary
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.timeline, color: Colors.blue, size: 32),
+              SizedBox(width: 8),
+              Expanded(child: Text('Timeline Generated!')),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Patient: ${widget.patientName}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+                _buildStat('Documents Processed', '${response['statistics']['documents_processed']}'),
+                _buildStat('Timeline Events', '${response['statistics']['timeline_events']}'),
+                _buildStat('Current Medications', '${response['statistics']['current_medications']}'),
+                _buildStat('Chronic Conditions', '${response['statistics']['chronic_conditions']}'),
+                const SizedBox(height: 16),
+                if (response['timeline']?['summary'] != null) ...[
+                  const Text(
+                    'Summary:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    response['timeline']['summary'],
+                    style: const TextStyle(fontSize: 12, height: 1.4),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      print('❌ Complete error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to generate timeline: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildStat(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12)),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -213,6 +292,24 @@ class _CameraScreenState extends State<CameraScreen> {
                           color: Colors.grey,
                         ),
                       ),
+                      if (_batchId != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.green[100],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'Documents Scanned: $_documentCount',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -297,7 +394,7 @@ class _CameraScreenState extends State<CameraScreen> {
                               )
                             : const Icon(Icons.cloud_upload),
                         label: Text(
-                          _isUploading ? 'Uploading...' : 'Upload Image',
+                          _isUploading ? 'Uploading...' : 'Upload Document',
                           style: const TextStyle(fontSize: 18),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -307,19 +404,39 @@ class _CameraScreenState extends State<CameraScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // Retake Button
+                    // Scan Another Button
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: OutlinedButton.icon(
                         onPressed: _isUploading ? null : _takePicture,
-                        icon: const Icon(Icons.refresh),
+                        icon: const Icon(Icons.camera_alt),
                         label: const Text(
-                          'Retake Photo',
+                          'Scan Another',
                           style: TextStyle(fontSize: 18),
                         ),
                       ),
                     ),
+                    if (_documentCount > 0) ...[
+                      const SizedBox(height: 16),
+                      // Complete Scanning Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton.icon(
+                          onPressed: _isUploading ? null : _completeScanning,
+                          icon: const Icon(Icons.check_circle),
+                          label: const Text(
+                            'Complete & Generate Timeline',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               
