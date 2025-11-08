@@ -45,22 +45,47 @@ def add_to_queue(entry: QueueEntry):
     Add patient to queue
     
     **Request Body:**
-    - patient_id: Patient's unique identifier
+    - patient_id: Patient's unique identifier (optional if uhid provided)
+    - uhid: Patient's Government Health ID (optional if patient_id provided)
     - priority: "normal" or "urgent"
+    
+    **Note:** You can provide either patient_id OR uhid. System will lookup the patient.
     
     **Returns:**
     - queue_id: Unique queue entry identifier
     - token_number: Queue position number
     """
     
-    # Verify patient exists
-    patient = storage.get_patient(entry.patient_id)
-    if not patient:
-        raise HTTPException(status_code=404, detail=f"Patient {entry.patient_id} not found")
+    # Validate: must provide either patient_id or uhid
+    if not entry.patient_id and not entry.uhid:
+        raise HTTPException(
+            status_code=400, 
+            detail="Must provide either patient_id or uhid"
+        )
+    
+    # Lookup patient by uhid if provided
+    if entry.uhid:
+        patient = storage.get_patient_by_uhid(entry.uhid)
+        if not patient:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Patient with UHID {entry.uhid} not found"
+            )
+        patient_id = patient['patient_id']
+        print(f"✅ Found patient by UHID {entry.uhid}: {patient['name']}")
+    else:
+        # Use patient_id directly
+        patient = storage.get_patient(entry.patient_id)
+        if not patient:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Patient {entry.patient_id} not found"
+            )
+        patient_id = entry.patient_id
     
     # Check if already in queue
     queue = storage.get_queue()
-    existing = next((q for q in queue if q['patient_id'] == entry.patient_id and q['status'] != 'completed'), None)
+    existing = next((q for q in queue if q['patient_id'] == patient_id and q['status'] != 'completed'), None)
     if existing:
         raise HTTPException(status_code=400, detail=f"Patient already in queue with status: {existing['status']}")
     
@@ -72,7 +97,7 @@ def add_to_queue(entry: QueueEntry):
     queue_id = f"Q_{uuid.uuid4().hex[:8].upper()}"
     queue_entry = {
         "queue_id": queue_id,
-        "patient_id": entry.patient_id,
+        "patient_id": patient_id,
         "patient_name": patient['name'],
         "token_number": token_number,
         "priority": entry.priority,

@@ -142,5 +142,17 @@
     "gender": "male",
     "created_at": "2025-11-08T15:32:28.256625",
     "status": "active"
+  },
+  "PAT_1356A735": {
+    "patient_id": "PAT_1356A735",
+    "uhid": "123",
+    "name": "Rishi Ahuja",
+    "phone": "9915972220",
+    "age": 19,
+    "gender": "male",
+    "created_at": "2025-11-08T15:55:13.660734",
+    "last_visit": "2025-11-08T15:55:13.660740",
+    "visit_count": 1,
+    "status": "active"
   }
 }

@@ -26,6 +26,7 @@ class Priority(str, Enum):
 
 class PatientCreate(BaseModel):
     """Request model for patient registration"""
+    uhid: str = Field(..., min_length=1, max_length=50, description="Unified Health ID (Government issued)")
     name: str = Field(..., min_length=1, max_length=100)
     phone: str = Field(..., pattern=r'^\d{10}$')
     age: Optional[int] = Field(None, ge=0, le=120)
@@ -34,6 +35,7 @@ class PatientCreate(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "uhid": "UHID123456789",
                 "name": "Ram Kumar",
                 "phone": "9876543210",
                 "age": 45,
@@ -45,20 +47,32 @@ class PatientCreate(BaseModel):
 class PatientResponse(BaseModel):
     """Response model for patient data"""
     patient_id: str
+    uhid: str
     name: str
     phone: str
     age: Optional[int]
     gender: Optional[str]
     created_at: str
     status: str
+    last_visit: Optional[str] = None
+    visit_count: int = 0
 
 
 # ==================== QUEUE MODELS ====================
 
 class QueueEntry(BaseModel):
     """Request model for adding to queue"""
-    patient_id: str
+    patient_id: Optional[str] = None  # Can use patient_id OR uhid
+    uhid: Optional[str] = None        # Can use patient_id OR uhid
     priority: Priority = Priority.NORMAL
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "uhid": "UHID123456789",
+                "priority": "normal"
+            }
+        }
 
 
 class QueueItemResponse(BaseModel):

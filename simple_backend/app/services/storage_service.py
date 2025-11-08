@@ -58,6 +58,14 @@ class StorageService:
         patients = self.get_all_patients()
         return patients.get(patient_id)
     
+    def get_patient_by_uhid(self, uhid: str) -> Optional[Dict]:
+        """Get patient by UHID (Government Health ID)"""
+        patients = self.get_all_patients()
+        for patient_id, patient_data in patients.items():
+            if patient_data.get('uhid') == uhid:
+                return patient_data
+        return None
+    
     def create_patient(self, patient_id: str, patient_data: Dict) -> Dict:
         """Create new patient"""
         patients = self.get_all_patients()
