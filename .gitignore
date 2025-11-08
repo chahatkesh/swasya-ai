@@ -7,3 +7,5 @@ __pycache__/
 *.log
 simple_backend/data/
 simple_backend/config_test.py
+simple_backend/main_original.py
+simple_backend/main_backup.py

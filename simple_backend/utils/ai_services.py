@@ -20,6 +20,11 @@ groq_client = Groq(api_key=GROQ_API_KEY)
 async def transcribe_audio(file_path: str) -> str:
     """Use Groq Whisper to transcribe audio"""
     try:
+        # Validate file exists and is within expected directory
+        import os
+        if not os.path.exists(file_path):
+            raise ValueError("File not found")
+        
         print(f"🎙️ Transcribing with Groq Whisper...")
         
         with open(file_path, "rb") as audio_file:
@@ -73,6 +78,7 @@ Return ONLY valid JSON (no markdown):
         
         return json.loads(text)
     except Exception as e:
+        print(f"Error generating SOAP note: {e}")
         return {
             "subjective": transcript[:200],
             "objective": "Pending",
@@ -81,7 +87,7 @@ Return ONLY valid JSON (no markdown):
             "chief_complaint": "See transcript",
             "medications": [],
             "language": "unknown",
-            "error": str(e)
+            "error": "Failed to generate structured note"
         }
 
 
@@ -125,11 +131,12 @@ Return ONLY valid JSON (no markdown):
         return json.loads(text)
     
     except Exception as e:
+        print(f"Error extracting prescription: {e}")
         return {
             "doctor_name": "Unknown",
             "date": "Unknown",
             "medications": [],
             "diagnosis": "Could not extract",
             "instructions": "",
-            "error": str(e)
+            "error": "Failed to extract prescription details"
         }

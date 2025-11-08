@@ -28,7 +28,7 @@ def register_patient(patient: PatientCreate):
     }
     save_json(PATIENTS_FILE, patients)
     
-    print(f"✅ Registered: {patient_id} - {patient.name}")
+    print(f"✅ Registered new patient")
     
     return {
         "success": True,
