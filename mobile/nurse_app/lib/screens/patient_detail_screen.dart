@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/core.dart';
 import '../services/api_service.dart';
 import '../widgets/soap_notes_sheet.dart';
@@ -9,18 +10,26 @@ import 'timeline_view_screen.dart';
 class PatientDetailScreen extends StatefulWidget {
   final String patientId;
   final String patientName;
+  final int? queuePosition;
 
   const PatientDetailScreen({
     super.key,
     required this.patientId,
     required this.patientName,
+    this.queuePosition,
   });
 
   @override
   State<PatientDetailScreen> createState() => _PatientDetailScreenState();
 }
 
-class _PatientDetailScreenState extends State<PatientDetailScreen> {
+class _PatientDetailScreenState extends State<PatientDetailScreen>
+    with SingleTickerProviderStateMixin {
+  String? _queueId;
+  bool _isSending = false;
+  late AnimationController _animationController;
+  late Animation<double> _flyAnimation;
+  
   Map<String, dynamic>? _patientData;
   bool _isLoading = true;
   String? _error;
@@ -29,7 +38,28 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   void initState() {
     super.initState();
     _loadPatientData();
-    print('👤 [PatientDetail] Initialized for ${widget.patientId}');
+    _loadQueueId();
+    
+    // Initialize simple animation controller
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    // Simple fly-away animation
+    _flyAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPatientData() async {
@@ -77,6 +107,96 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         };
       });
     }
+  }
+
+  // Load queue ID from SharedPreferences OR by patient_id lookup
+  Future<void> _loadQueueId() async {
+    try {
+      print('📋 [PatientDetail] Loading queue_id for patient: ${widget.patientId}');
+      
+      // First try to get queue_id for this specific patient from the backend
+      final response = await ApiService.getQueue();
+      print('📋 [PatientDetail] Queue response received');
+      
+      final queue = response['queue'] as List;
+      print('📋 [PatientDetail] Queue has ${queue.length} entries');
+      
+      // Find this patient's ACTIVE queue entry (not completed)
+      // Priority: waiting > nurse_completed > ready_for_doctor > in_consultation
+      final activeStatuses = ['waiting', 'nurse_completed', 'ready_for_doctor', 'in_consultation'];
+      
+      final queueEntry = queue.firstWhere(
+        (entry) => entry['patient_id'] == widget.patientId && 
+                   activeStatuses.contains(entry['status']),
+        orElse: () => null,
+      );
+      
+      if (queueEntry != null) {
+        // Try 'queue_id' first, then 'id'
+        final foundId = queueEntry['queue_id'] ?? queueEntry['id'];
+        setState(() {
+          _queueId = foundId;
+        });
+        print('✅ [PatientDetail] Found active queue_id: $_queueId (status: ${queueEntry['status']})');
+      } else {
+        print('⚠️ [PatientDetail] No active queue entry found for patient ${widget.patientId}');
+        
+        // Debug: show all entries for this patient
+        final patientEntries = queue.where((e) => e['patient_id'] == widget.patientId).toList();
+        if (patientEntries.isNotEmpty) {
+          print('   Found ${patientEntries.length} total entries for this patient:');
+          for (var entry in patientEntries) {
+            print('   - queue_id: ${entry['queue_id']}, status: ${entry['status']}');
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ [PatientDetail] Failed to load queue_id: $e');
+      
+      // Fallback: try SharedPreferences (for backward compatibility)
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final fallbackQueueId = prefs.getString('current_queue_id');
+        if (fallbackQueueId != null) {
+          setState(() {
+            _queueId = fallbackQueueId;
+          });
+          print('📋 [PatientDetail] Using fallback queue_id from prefs: $_queueId');
+        }
+      } catch (prefError) {
+        print('❌ [PatientDetail] Fallback also failed: $prefError');
+      }
+    }
+  }
+
+  // Get initials from patient name
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) {
+      return parts[0].substring(0, 1).toUpperCase();
+    }
+    return '${parts[0].substring(0, 1)}${parts[parts.length - 1].substring(0, 1)}'.toUpperCase();
+  }
+
+  // Generate color based on name (consistent per name)
+  Color _getAvatarColor(String name) {
+    final colors = [
+      const Color(0xFF5C6BC0), // Indigo
+      const Color(0xFF26A69A), // Teal
+      const Color(0xFFEF5350), // Red
+      const Color(0xFF42A5F5), // Blue
+      const Color(0xFF66BB6A), // Green
+      const Color(0xFFFF7043), // Deep Orange
+      const Color(0xFFAB47BC), // Purple
+      const Color(0xFF29B6F6), // Light Blue
+      const Color(0xFF9CCC65), // Light Green
+      const Color(0xFFFFCA28), // Amber
+    ];
+    
+    // Use hash of name to get consistent color
+    final hash = name.hashCode.abs();
+    return colors[hash % colors.length];
   }
 
   void _navigateToScribe() {
@@ -148,6 +268,59 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     SoapNotesSheet.show(context, notes);
   }
 
+  Future<void> _sendToDoctor() async {
+    if (_queueId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Queue ID not found. Please register patient first.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Start the animation
+    setState(() {
+      _isSending = true;
+    });
+    _animationController.forward();
+
+    // Wait for animation to complete
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    try {
+      await ApiService.nurseCompletePatient(_queueId!);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Patient sent to doctor successfully!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Navigate back to home
+      Navigator.pop(context);
+    } catch (e) {
+      // Reset animation on error
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+        _animationController.reset();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasNotes = _patientData != null && _patientData!['notes_count'] > 0;
@@ -189,7 +362,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Patient Info Card
+                  // Patient Info Card (subtle design)
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(AppSpacing.xxl),
@@ -210,20 +383,43 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                     ),
                     child: Column(
                       children: [
+                        // Patient Avatar with Initials
                         Container(
                           width: 72,
                           height: 72,
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
+                            gradient: LinearGradient(
+                              colors: [
+                                _getAvatarColor(widget.patientName),
+                                _getAvatarColor(widget.patientName).withOpacity(0.7),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                             shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: _getAvatarColor(widget.patientName).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
-                          child: Icon(
-                            Icons.person_outline,
-                            size: 40,
-                            color: AppColors.primary,
+                          child: Center(
+                            child: Text(
+                              _getInitials(widget.patientName),
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
                         ),
                         SizedBox(height: AppSpacing.lg),
+                        
+                        // Patient Name
                         Text(
                           widget.patientName,
                           style: const TextStyle(
@@ -234,6 +430,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                           textAlign: TextAlign.center,
                         ),
                         SizedBox(height: AppSpacing.xs),
+                        
+                        // Patient ID
                         Text(
                           'ID: ${widget.patientId}',
                           style: TextStyle(
@@ -241,6 +439,84 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                             color: AppColors.textSecondary,
                           ),
                         ),
+
+                        // Show "Send to Doctor" button ONLY if:
+                        // 1. Patient is at queue position #1 (top priority)
+                        // 2. AND patient has an active queue entry
+                        if (widget.queuePosition == 1 && _queueId != null) ...[
+                          SizedBox(height: AppSpacing.xl),
+                          
+                          // Divider
+                          Container(
+                            height: 1,
+                            margin: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                            color: AppColors.primary.withOpacity(0.1),
+                          ),
+
+                          SizedBox(height: AppSpacing.xl),
+
+                          // Send to Doctor Button (simple animation)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: AnimatedBuilder(
+                              animation: _animationController,
+                              builder: (context, child) {
+                                return OutlinedButton(
+                                  onPressed: _isSending ? null : _sendToDoctor,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.accent,
+                                    disabledForegroundColor: AppColors.accent.withOpacity(0.5),
+                                    side: BorderSide(
+                                      color: AppColors.accent.withOpacity(_isSending ? 0.3 : 0.5),
+                                      width: 1.5,
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: AppSpacing.md,
+                                      horizontal: AppSpacing.lg,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Animated plane icon that flies away
+                                      Transform.translate(
+                                        offset: Offset(_flyAnimation.value * 200, 0),
+                                        child: Opacity(
+                                          opacity: 1 - _flyAnimation.value,
+                                          child: Icon(
+                                            Icons.send_rounded,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: AppSpacing.sm),
+                                      // Text fades as plane flies
+                                      Opacity(
+                                        opacity: 1 - (_flyAnimation.value * 0.6),
+                                        child: const Text('Send to Doctor'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          SizedBox(height: AppSpacing.xs),
+
+                          // Helper text
+                          Text(
+                            '✓ Ready for doctor review',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

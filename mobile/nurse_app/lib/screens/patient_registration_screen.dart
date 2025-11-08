@@ -114,9 +114,11 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
       );
 
       final patientId = response['patient_id'];
+      final queueId = response['queue_id'];  // NEW: Get queue_id from registration
       
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('current_patient_id', patientId);
+      await prefs.setString('current_queue_id', queueId);  // NEW: Store queue_id
       await prefs.setString('current_patient_uhid', _uhidController.text.trim());
       await prefs.setString('current_patient_name', _nameController.text.trim());
 
@@ -151,13 +153,16 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
     });
 
     try {
-      await ApiService.addToQueue(
+      final response = await ApiService.addToQueue(
         uhid: _uhidController.text.trim(),
         priority: 'normal',
       );
 
+      final queueId = response['queue_entry']['queue_id'];  // NEW: Extract queue_id from response
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('current_patient_id', _existingPatient!['patient_id']);
+      await prefs.setString('current_queue_id', queueId);  // NEW: Store queue_id
       await prefs.setString('current_patient_uhid', _uhidController.text.trim());
       await prefs.setString('current_patient_name', _existingPatient!['name']);
 

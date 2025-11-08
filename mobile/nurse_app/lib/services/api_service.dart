@@ -144,6 +144,24 @@ class ApiService {
     }
   }
 
+  /// Nurse marks patient as complete (ready for doctor)
+  static Future<Map<String, dynamic>> nurseCompletePatient(String queueId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${Config.apiBaseUrl}/queue/$queueId/nurse-complete'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to mark patient complete: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error marking patient complete: $e');
+    }
+  }
+
   /// Get waiting patients
   static Future<Map<String, dynamic>> getWaitingPatients() async {
     try {
