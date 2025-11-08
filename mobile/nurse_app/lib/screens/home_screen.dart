@@ -59,8 +59,8 @@ class _HomeScreenState extends State<HomeScreen> {
       print('📥 [HomeScreen] Fetching today\'s patient queue... ${silent ? "(silent background refresh)" : ""}');
       print('   ⏱️ Request started at: ${startTime.hour}:${startTime.minute}:${startTime.second}');
       
-      // Fetch all patients (queue endpoint might be empty)
-      final response = await ApiService.getAllPatients();
+      // Fetch active queue (patients waiting for nurse or doctor)
+      final response = await ApiService.getQueue();
       
       final endTime = DateTime.now();
       final duration = endTime.difference(startTime);
@@ -69,13 +69,39 @@ class _HomeScreenState extends State<HomeScreen> {
       
       if (!mounted) return; // Check if widget is still mounted
       
+      // Filter for active queue entries only (nurse's queue)
+      // Only show patients still waiting for nurse to work on them
+      final queue = List<Map<String, dynamic>>.from(response['queue'] ?? []);
+      final activeQueue = queue.where((entry) {
+        final status = entry['status'] as String?;
+        // Only show: waiting (patients nurse needs to work on)
+        // Exclude: nurse_completed (handed to doctor), ready_for_doctor (with doctor),
+        //          in_consultation (with doctor), completed, cancelled
+        return status == 'waiting';
+      }).toList();
+      
+      // Convert queue entries to patient format (add queue_id to each)
+      final patients = activeQueue.map((queueEntry) {
+        return {
+          'patient_id': queueEntry['patient_id'],
+          'name': queueEntry['patient_name'],
+          'queue_id': queueEntry['queue_id'],
+          'queue_status': queueEntry['status'],
+          'token_number': queueEntry['token_number'],
+          'priority': queueEntry['priority'],
+          // Add empty counts so UI doesn't show "No additional info"
+          'notes_count': 0,
+          'history_count': 0,
+        };
+      }).toList();
+      
       setState(() {
-        _patients = List<Map<String, dynamic>>.from(response['patients'] ?? []);
+        _patients = patients;
         _isLoading = false;
         _isRefreshing = false;
       });
       
-      print('✅ [HomeScreen] Loaded ${_patients.length} patients');
+      print('✅ [HomeScreen] Loaded ${_patients.length} active patients in queue');
       
       // Debug: print patient IDs
       if (_patients.isNotEmpty) {
@@ -169,6 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
           patientId: patient['patient_id'],
           patientName: patient['name'],
           queuePosition: queuePosition,
+          queueId: patient['queue_id'],  // NEW: Pass queue_id
         ),
       ),
     ).then((_) {
@@ -382,24 +409,35 @@ class _HomeScreenState extends State<HomeScreen> {
                                 final queuePosition = index + 1; // Position in queue (1-based)
                                 final status = _getPatientStatus(patient);
                                 final patientName = patient['name'] ?? 'Unknown Patient';
-                                final uhid = patient['uhid'];
-                                final age = patient['age'];
-                                final gender = patient['gender'];
+                                final queueStatus = patient['queue_status'] ?? 'waiting';
+                                final tokenNumber = patient['token_number'];
                                 
-                                // Build secondary info line
+                                // Build secondary info line from queue data
                                 final List<String> infoItems = [];
-                                if (uhid != null && uhid.toString().isNotEmpty) {
-                                  infoItems.add('UHID: $uhid');
+                                if (tokenNumber != null) {
+                                  infoItems.add('Token #$tokenNumber');
                                 }
-                                if (age != null) {
-                                  infoItems.add('$age yrs');
+                                // Show queue status in readable format
+                                String statusText = '';
+                                switch (queueStatus) {
+                                  case 'waiting':
+                                    statusText = 'Waiting for nurse';
+                                    break;
+                                  case 'nurse_completed':
+                                    statusText = 'Notes ready';
+                                    break;
+                                  case 'ready_for_doctor':
+                                    statusText = 'Ready for doctor';
+                                    break;
+                                  default:
+                                    statusText = queueStatus;
                                 }
-                                if (gender != null && gender.toString().isNotEmpty) {
-                                  infoItems.add(gender.toString());
+                                if (statusText.isNotEmpty) {
+                                  infoItems.add(statusText);
                                 }
                                 final secondaryInfo = infoItems.isNotEmpty 
                                     ? infoItems.join(' • ') 
-                                    : 'No additional info';
+                                    : 'In queue';
                                 
                                 return TweenAnimationBuilder<double>(
                                   tween: Tween(begin: 0.0, end: 1.0),
