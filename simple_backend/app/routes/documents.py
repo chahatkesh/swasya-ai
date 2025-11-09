@@ -3,7 +3,7 @@ Document scanning and timeline generation routes
 """
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, BackgroundTasks
-from app.services.storage_service import storage
+from app.services.mongodb_storage import mongodb_storage
 from app.services.ai_service import extract_prescription
 from app.services.mongo_service import mongo_service
 from app.services.timeline_service import generate_comprehensive_timeline
@@ -31,7 +31,7 @@ async def start_document_batch(patient_id: str):
     """
     
     # Verify patient exists
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
@@ -99,7 +99,7 @@ async def upload_document_to_batch(
     print(f"   Filename: {file.filename}")
     
     # Verify patient exists
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
@@ -228,7 +228,7 @@ async def complete_batch_and_generate_timeline(patient_id: str, batch_id: Option
     """
     
     # Verify patient exists
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
@@ -292,7 +292,7 @@ async def complete_batch_and_generate_timeline(patient_id: str, batch_id: Option
             "current_medications_count": len(timeline_data.get('current_medications', []))
         }
         
-        storage.add_history(patient_id, history_entry)
+        await mongodb_storage.add_history(patient_id, history_entry)
         
         # Mark batch as completed
         await mongo_service.update_batch_status(batch_id, "completed")
@@ -324,13 +324,13 @@ async def complete_batch_and_generate_timeline(patient_id: str, batch_id: Option
 @router.get("/{patient_id}/timeline", response_model=dict)
 async def get_patient_timeline(patient_id: str):
     """
-    Get latest comprehensive medical timeline for patient
+    Get patient's AI-generated medical timeline
     
     **Path Parameters:**
     - patient_id: Patient's unique identifier
     """
     
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
@@ -363,7 +363,7 @@ async def get_patient_documents(patient_id: str):
     - patient_id: Patient's unique identifier
     """
     
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     
@@ -391,7 +391,7 @@ async def get_patient_batches(patient_id: str):
     - patient_id: Patient's unique identifier
     """
     
-    patient = storage.get_patient(patient_id)
+    patient = await mongodb_storage.get_patient(patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found")
     

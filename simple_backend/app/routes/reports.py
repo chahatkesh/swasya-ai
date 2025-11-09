@@ -141,10 +141,20 @@ def _build_medical_timeline(notes: List[Dict], history: List[Dict]) -> List[Dict
     # Add SOAP notes
     for note in notes:
         soap = note.get('soap_note', {})
+        # Get timestamp or parse from created_at, fallback to 0
+        timestamp = note.get('timestamp')
+        if timestamp is None and note.get('created_at'):
+            try:
+                timestamp = int(datetime.fromisoformat(note.get('created_at')).timestamp())
+            except:
+                timestamp = 0
+        elif timestamp is None:
+            timestamp = 0
+            
         timeline.append({
             "type": "consultation",
             "date": note.get('created_at'),
-            "timestamp": note.get('timestamp'),
+            "timestamp": timestamp,
             "chief_complaint": soap.get('chief_complaint', 'Not documented'),
             "assessment": soap.get('assessment', 'Not documented'),
             "plan": soap.get('plan', 'Not documented'),
@@ -156,18 +166,28 @@ def _build_medical_timeline(notes: List[Dict], history: List[Dict]) -> List[Dict
     # Add prescription history
     for entry in history:
         prescription = entry.get('prescription_data', {})
+        # Get timestamp or parse from created_at, fallback to 0
+        timestamp = entry.get('timestamp')
+        if timestamp is None and entry.get('created_at'):
+            try:
+                timestamp = int(datetime.fromisoformat(entry.get('created_at')).timestamp())
+            except:
+                timestamp = 0
+        elif timestamp is None:
+            timestamp = 0
+            
         timeline.append({
             "type": "prescription",
             "date": entry.get('created_at'),
-            "timestamp": entry.get('timestamp'),
+            "timestamp": timestamp,
             "doctor": prescription.get('doctor_name', 'Unknown'),
             "diagnosis": prescription.get('diagnosis', 'Not specified'),
             "medications": prescription.get('medications', []),
             "image_url": entry.get('image_url')
         })
     
-    # Sort by date (newest first)
-    timeline.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
+    # Sort by timestamp (newest first) - all timestamps are now integers
+    timeline.sort(key=lambda x: x['timestamp'], reverse=True)
     
     return timeline
 
