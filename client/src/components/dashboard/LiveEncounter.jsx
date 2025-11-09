@@ -377,22 +377,34 @@ const PreviousSOAPNotes = ({ timelineData, colors }) => {
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {soapNote.medications.map((med, medIndex) => (
-                            <div 
-                              key={medIndex}
-                              className="text-xs p-3 rounded-lg border"
-                              style={{ 
-                                backgroundColor: colors.surfaceSecondary,
-                                borderColor: colors.border,
-                                color: colors.textPrimary 
-                              }}
-                            >
-                              <div className="font-medium">{med.name}</div>
-                              <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                                {med.dosage} • {med.frequency}
+                          {soapNote.medications.map((med, medIndex) => {
+                            // Handle both string format and object format
+                            const medicationName = typeof med === 'string' ? med : (med.name || 'Unknown medication');
+                            const medicationDosage = typeof med === 'object' ? med.dosage : null;
+                            const medicationFrequency = typeof med === 'object' ? med.frequency : null;
+                            
+                            return (
+                              <div 
+                                key={medIndex}
+                                className="text-xs p-3 rounded-lg border"
+                                style={{ 
+                                  backgroundColor: colors.surfaceSecondary,
+                                  borderColor: colors.border,
+                                  color: colors.textPrimary 
+                                }}
+                              >
+                                <div className="font-medium">{medicationName}</div>
+                                {(medicationDosage || medicationFrequency) && (
+                                  <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                                    {medicationDosage && medicationFrequency ? 
+                                      `${medicationDosage} • ${medicationFrequency}` :
+                                      medicationDosage || medicationFrequency
+                                    }
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -507,7 +519,8 @@ const LiveEncounter = ({ encounterData, selectedPatient, timelineData, onConsult
       console.log(`� Fetching latest data for patient: ${patientId}`);
       setConnectionStatus('connecting');
       
-      const latestNote = await notesAPI.getLatest(patientId);
+      // WORKAROUND: Use getActualLatest instead of getLatest due to API bug
+      const latestNote = await notesAPI.getActualLatest(patientId);
       
       if (latestNote && latestNote.success && latestNote.note) {
         const transformedData = transformers.transformEncounterData(latestNote, patientId);
@@ -568,7 +581,8 @@ const LiveEncounter = ({ encounterData, selectedPatient, timelineData, onConsult
     }
     
     try {
-      const latestNote = await notesAPI.getLatest(patientId);
+      // WORKAROUND: Use getActualLatest instead of getLatest due to API bug
+      const latestNote = await notesAPI.getActualLatest(patientId);
       
       if (latestNote && latestNote.success && latestNote.note) {
         const transformedData = transformers.transformEncounterData(latestNote, patientId);
@@ -1206,22 +1220,34 @@ const LiveEncounter = ({ encounterData, selectedPatient, timelineData, onConsult
                       </h5>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {soapNote.medications.map((med, index) => (
-                        <div 
-                          key={index}
-                          className="text-sm p-3 rounded-lg border"
-                          style={{ 
-                            backgroundColor: colors.surfaceSecondary,
-                            borderColor: colors.error + '20',
-                            color: colors.textPrimary 
-                          }}
-                        >
-                          <div className="font-medium">{med.name}</div>
-                          <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                            {med.dosage} • {med.frequency}
+                      {soapNote.medications.map((med, index) => {
+                        // Handle both string format and object format
+                        const medicationName = typeof med === 'string' ? med : (med.name || 'Unknown medication');
+                        const medicationDosage = typeof med === 'object' ? med.dosage : null;
+                        const medicationFrequency = typeof med === 'object' ? med.frequency : null;
+                        
+                        return (
+                          <div 
+                            key={index}
+                            className="text-sm p-3 rounded-lg border"
+                            style={{ 
+                              backgroundColor: colors.surfaceSecondary,
+                              borderColor: colors.error + '20',
+                              color: colors.textPrimary 
+                            }}
+                          >
+                            <div className="font-medium">{medicationName}</div>
+                            {(medicationDosage || medicationFrequency) && (
+                              <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                                {medicationDosage && medicationFrequency ? 
+                                  `${medicationDosage} • ${medicationFrequency}` :
+                                  medicationDosage || medicationFrequency
+                                }
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
