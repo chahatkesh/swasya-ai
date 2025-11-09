@@ -226,8 +226,6 @@ An analytics and visualization module that:
 
 ---
 
----
-
 ## **Impact**
 
 * **40% reduction** in diagnosis preparation time.
@@ -235,8 +233,6 @@ An analytics and visualization module that:
 * **Streamlined communication** between nurse and doctor.
 * **Digitized medical history** for every rural patient.
 * **Data-driven public health monitoring** for local authorities.
-
----
 
 ## **Future Scope**
 
@@ -247,12 +243,5 @@ An analytics and visualization module that:
 
 ---
 
-## **Team**
 
-Built with passion by Team TechThugs for HackCBS 8.0 Hackathon
-
----
-
-## **Tagline**
-
-> "Turning dialogue into data and data into clarity."
+> Built with passion by Team TechThugs for HackCBS 8.0 Hackathon
