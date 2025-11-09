@@ -200,10 +200,33 @@ def generate_soap_note(transcript_text):
     
     prompt = f"""You are an expert medical scribe working in a Primary Healthcare Center in India.
 
-Convert the following nurse-patient conversation into a clean, structured SOAP note in JSON format.
+IMPORTANT CONTEXT:
+- The conversation below is a SPEECH-TO-TEXT TRANSCRIPT from an audio recording between a nurse and a patient
+- The transcript may contain errors, mishearings, incomplete sentences, and background noise artifacts
+- Medicine names are OFTEN INCORRECT in STT - use your medical knowledge to correct common Indian medicine names
+- The conversation may be in Hindi, English, or mixed (Hinglish)
+- Infer and extract medical information even from casual, colloquial language
 
-CONVERSATION:
+TASK:
+Convert this messy nurse-patient conversation into a clean, structured SOAP note.
+
+CONVERSATION TRANSCRIPT (RAW STT OUTPUT):
 {transcript_text}
+
+INSTRUCTIONS:
+1. **Subjective**: Extract what the PATIENT says about their symptoms, complaints, history. Infer duration, severity, and triggers even if not explicitly stated.
+2. **Objective**: Extract what the NURSE observes or measures - vitals (BP, temp, pulse), physical examination findings, visible symptoms. If not mentioned, write "Physical examination pending".
+3. **Assessment**: Make a preliminary diagnosis or health assessment based on symptoms. Always provide your best medical inference - never leave empty.
+4. **Plan**: Extract treatment recommendations, medicine prescriptions, follow-up instructions. Correct medicine names if they appear garbled (e.g., "Para sit a mole" → "Paracetamol", "met for min" → "Metformin").
+5. **Chief Complaint**: One concise sentence summarizing the main medical issue.
+
+MEDICINE NAME CORRECTION EXAMPLES:
+- "para sit a mole", "para c tamol" → "Paracetamol"
+- "met for min", "metform in" → "Metformin"
+- "amal dip in", "a modo pin" → "Amlodipine"
+- "see pro flex a sin", "sipro" → "Ciprofloxacin"
+- "az throw my sin" → "Azithromycin"
+- "d cloud phenac" → "Diclofenac"
 
 Return ONLY valid JSON in this exact format (no markdown, no code blocks):
 {{
@@ -215,8 +238,8 @@ Return ONLY valid JSON in this exact format (no markdown, no code blocks):
     "language_detected": "hindi" or "english"
 }}
 
-If information is not mentioned in the conversation, use "Not documented" for that field.
-Keep it concise and medically accurate.
+NEVER use "Not documented" - always infer something meaningful from the conversation.
+Keep it concise, medically accurate, and professionally worded.
 """
     
     try:
