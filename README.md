@@ -75,8 +75,6 @@ It reduces diagnosis time, ensures accurate record-keeping, and empowers doctors
 
 ### **DevOps & Deployment**
 - **AWS SAM (Serverless Application Model)** - Lambda deployment and infrastructure management
-- **AWS CloudWatch** - Logging, monitoring, and alerting
-- **AWS X-Ray** - Distributed tracing for serverless applications
 - **Docker** - Backend containerization
 - **Vercel** - Frontend deployment
 
