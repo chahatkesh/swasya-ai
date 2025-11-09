@@ -69,36 +69,6 @@ const Dashboard = () => {
     })
   }
 
-  // Patient sorting function - same as PatientQueue component
-  const getSortedPatients = useCallback((patients) => {
-    return [...patients].sort((a, b) => {
-      // Priority order: in_consultation -> ready_for_doctor -> nurse_completed -> waiting -> completed
-      const statusOrder = {
-        'in_consultation': 1,
-        'ready_for_doctor': 2,
-        'nurse_completed': 3,
-        'waiting': 4,
-        'completed': 5,
-        // Legacy support mapping
-        'with-nurse': 3,
-        'ready': 2,
-        'in_progress': 1
-      };
-
-      const aOrder = statusOrder[a.status] || 99;
-      const bOrder = statusOrder[b.status] || 99;
-
-      if (aOrder !== bOrder) {
-        return aOrder - bOrder;
-      }
-
-      // Within same status, sort by startedAt (if present) then by check-in/added time (earlier first)
-      const aTime = new Date(a.startedAt || a.lastUpdated || a.addedAt || 0);
-      const bTime = new Date(b.startedAt || b.lastUpdated || b.addedAt || 0);
-      return aTime - bTime;
-    });
-  }, [])
-
   const handleQueueUpdate = useCallback((queueData) => {
     setPatients(prevPatients => 
       updatePatientsWithQueueData(prevPatients, queueData.queue)
@@ -151,17 +121,6 @@ const Dashboard = () => {
       setTimelineData(null)
     }
   }
-
-  // Auto-select the top patient in queue when patients are loaded or updated
-  useEffect(() => {
-    if (!selectedPatient && patients.length > 0) {
-      const sortedPatients = getSortedPatients(patients)
-      const topPatient = sortedPatients.find(p => p.status !== 'completed')
-      if (topPatient) {
-        handlePatientSelect(topPatient)
-      }
-    }
-  }, [patients, selectedPatient, getSortedPatients])
 
   // Navigation handlers
   const handleSwasyaMapClick = () => {

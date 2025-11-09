@@ -14,7 +14,7 @@ const PatientHistory = ({ selectedPatient }) => {
     basicInfo: false,
     medications: false,
     conditions: false,
-    timeline: false,
+    timeline: true, // Timeline expanded by default to showcase the improved UI
     soapNotes: false,
     medicalSummary: false,
     visitInfo: false
@@ -328,7 +328,7 @@ const PatientHistory = ({ selectedPatient }) => {
             </div>
           )}
 
-          {/* Medical Timeline Events */}
+          {/* Medical Timeline Events - Compact Clean Design */}
           {medicalTimeline?.timeline?.timeline_events && medicalTimeline.timeline.timeline_events.length > 0 && (
             <div>
               <div 
@@ -337,7 +337,7 @@ const PatientHistory = ({ selectedPatient }) => {
               >
                 <h3 className="text-lg font-medium flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <FiClock size={18} style={{ color: colors.primary }} />
-                  Medical Timeline ({medicalTimeline.timeline.timeline_events.length} events)
+                  Medical Timeline ({medicalTimeline.timeline.timeline_events.length})
                 </h3>
                 {expandedSections.timeline ? 
                   <FiChevronUp size={20} style={{ color: colors.textSecondary }} /> : 
@@ -346,57 +346,166 @@ const PatientHistory = ({ selectedPatient }) => {
               </div>
               
               {expandedSections.timeline && (
-                <div className="space-y-3">
-                  {medicalTimeline.timeline.timeline_events.map((event, index) => (
-                    <div 
-                      key={index}
-                      className="p-4 rounded-xl border"
-                      style={{ backgroundColor: colors.background, borderColor: colors.border }}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs px-2 py-1 rounded-full" style={{ 
-                              backgroundColor: colors.primary20, 
-                              color: colors.primary 
-                            }}>
-                              {event.event_type}
-                            </span>
-                            <span className="text-sm" style={{ color: colors.textSecondary }}>
-                              {formatDate(event.date)}
-                            </span>
-                          </div>
-                          <p className="font-medium" style={{ color: colors.textPrimary }}>
-                            {event.description}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {event.medications && event.medications.length > 0 && (
-                        <div className="mt-3">
-                          <h5 className="text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
-                            Medications:
-                          </h5>
-                          <div className="space-y-1">
-                            {event.medications.map((med, medIndex) => (
-                              <div key={medIndex} className="text-sm flex justify-between">
-                                <span style={{ color: colors.textPrimary }}>{med.name}</span>
-                                <span style={{ color: colors.textSecondary }}>{med.dosage}</span>
+                <div className="relative">
+                  {/* Compact Timeline Line */}
+                  <div 
+                    className="absolute left-3 top-0 bottom-0 w-px"
+                    style={{ backgroundColor: colors.border }}
+                  />
+                  
+                  <div className="space-y-4">
+                    {medicalTimeline.timeline.timeline_events
+                      .sort((a, b) => new Date(b.date) - new Date(a.date))
+                      .map((event, index) => {
+                        const eventDate = new Date(event.date);
+                        const isRecent = (new Date() - eventDate) < (30 * 24 * 60 * 60 * 1000);
+                        
+                        return (
+                          <div key={index} className="relative flex items-start gap-4">
+                            {/* Compact Timeline Dot */}
+                            <div className="relative z-10 shrink-0 mt-1">
+                              <div 
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{ 
+                                  backgroundColor: isRecent ? colors.primary : colors.textTertiary
+                                }}
+                              />
+                            </div>
+                            
+                            {/* Compact Content */}
+                            <div className="flex-1">
+                              <div 
+                                className="p-4 rounded-lg border"
+                                style={{ 
+                                  backgroundColor: colors.background,
+                                  borderColor: colors.border
+                                }}
+                              >
+                                {/* Compact Header */}
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <span 
+                                      className="text-xs font-medium px-2 py-1 rounded-md"
+                                      style={{ 
+                                        backgroundColor: colors.primary + '15',
+                                        color: colors.primary
+                                      }}
+                                    >
+                                      {event.event_type}
+                                    </span>
+                                    {isRecent && (
+                                      <div 
+                                        className="w-1.5 h-1.5 rounded-full"
+                                        style={{ backgroundColor: colors.success }}
+                                      />
+                                    )}
+                                  </div>
+                                  <div className="text-right">
+                                    <div 
+                                      className="text-sm font-medium"
+                                      style={{ color: colors.textPrimary }}
+                                    >
+                                      {eventDate.toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                      })}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Compact Description */}
+                                <p 
+                                  className="text-sm mb-3"
+                                  style={{ color: colors.textPrimary }}
+                                >
+                                  {event.description}
+                                </p>
+                                
+                                {/* Compact Medications */}
+                                {event.medications && event.medications.length > 0 && (
+                                  <div className="mb-3">
+                                    <h5 
+                                      className="text-xs font-medium mb-2 flex items-center gap-1"
+                                      style={{ color: colors.textSecondary }}
+                                    >
+                                      <CiPill size={14} />
+                                      {event.medications.length} medication{event.medications.length > 1 ? 's' : ''}
+                                    </h5>
+                                    <div className="space-y-2">
+                                      {event.medications.map((med, medIndex) => (
+                                        <div 
+                                          key={medIndex}
+                                          className="p-3 rounded-lg"
+                                          style={{ 
+                                            backgroundColor: colors.surfaceSecondary
+                                          }}
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span 
+                                              className="text-sm font-medium"
+                                              style={{ color: colors.textPrimary }}
+                                            >
+                                              {med.name}
+                                            </span>
+                                            {med.dosage && (
+                                              <span 
+                                                className="text-xs px-2 py-0.5 rounded-md"
+                                                style={{ 
+                                                  backgroundColor: colors.accent + '15',
+                                                  color: colors.accent 
+                                                }}
+                                              >
+                                                {med.dosage}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {(med.frequency || med.duration) && (
+                                            <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                                              {med.frequency}
+                                              {med.duration && med.frequency && ' • '}
+                                              {med.duration}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Compact Notes */}
+                                {event.notes && event.notes.trim() && (
+                                  <div 
+                                    className="p-3 rounded-lg border-l-2"
+                                    style={{ 
+                                      backgroundColor: colors.primary + '05',
+                                      borderLeftColor: colors.primary
+                                    }}
+                                  >
+                                    <p 
+                                      className="text-xs"
+                                      style={{ color: colors.textPrimary }}
+                                    >
+                                      {event.notes}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
-                            ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      
-                      {event.notes && (
-                        <div className="mt-3 p-3 rounded-lg" style={{ backgroundColor: colors.surfaceSecondary }}>
-                          <p className="text-sm" style={{ color: colors.textPrimary }}>
-                            {event.notes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        );
+                      })}
+                  </div>
+                  
+                  {/* Compact Footer */}
+                  <div className="mt-6 text-center">
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>
+                      Generated {new Date(medicalTimeline.timeline.generated_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                      })} • {medicalTimeline.timeline.total_documents} documents
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

@@ -131,6 +131,27 @@ export const notesAPI = {
   getLatest: async (patientId) => {
     const response = await fetch(`${BASE_URL}/notes/${patientId}/latest`);
     return handleResponse(response);
+  },
+
+  // WORKAROUND: Get actual latest note from patient details API
+  getActualLatest: async (patientId) => {
+    try {
+      const patientDetails = await patientsAPI.getDetails(patientId);
+      if (patientDetails.success && patientDetails.latest_notes && patientDetails.latest_notes.length > 0) {
+        // The latest_notes array is already sorted by newest first
+        const latestNote = patientDetails.latest_notes[0];
+        return {
+          success: true,
+          patient_id: patientId,
+          patient_name: patientDetails.patient.name,
+          note: latestNote
+        };
+      }
+      return { success: false, error: 'No notes found' };
+    } catch (error) {
+      console.error('Error fetching actual latest note:', error);
+      throw error;
+    }
   }
 };
 
@@ -286,11 +307,14 @@ export const transformers = {
     const note = noteData.note;
     const soapNote = note.soap_note || {};
 
-    // Debug logging for chief complaint
+    // Debug logging for chief complaint and medications
     console.log('🔍 Transform Debug:', {
       noteId: note.note_id,
       hasChiefComplaint: !!soapNote.chief_complaint,
       chiefComplaint: soapNote.chief_complaint,
+      medications: soapNote.medications,
+      medicationsType: typeof soapNote.medications,
+      medicationsLength: soapNote.medications?.length,
       soapNoteKeys: Object.keys(soapNote)
     });
 
