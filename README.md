@@ -74,10 +74,11 @@ It reduces diagnosis time, ensures accurate record-keeping, and empowers doctors
 - **Groq** - Fast inference for real-time AI responses
 
 ### **DevOps & Deployment**
-- **AWS CloudFormation** - Infrastructure as Code
-- **AWS SAM** - Serverless Application Model
+- **AWS SAM (Serverless Application Model)** - Lambda deployment and infrastructure management
+- **Docker** - Backend containerization
 - **Vercel** - Frontend deployment
-- **Docker** - Containerization
+
+**[View Detailed AWS Infrastructure Documentation](./docs/AWS_INFRASTRUCTURE.md)** - Complete architecture, service stack, and deployment workflows
 
 ---
 
