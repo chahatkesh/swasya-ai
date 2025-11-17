@@ -5,7 +5,7 @@ class Config {
   // For Real Device use your computer's IP address (192.168.0.7)
   
   // IMPORTANT: Update this based on your device type!
-  static const String apiBaseUrl = 'http://192.168.0.7:8000'; // Real device (YOUR IP)
+  static const String apiBaseUrl = 'https://api.swasya.rishia.in'; // Real device (YOUR IP)
   // static const String apiBaseUrl = 'http://10.0.2.2:8000'; // Android emulator
   // static const String apiBaseUrl = 'http://localhost:8000'; // iOS simulator  
   
