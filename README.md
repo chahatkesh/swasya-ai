@@ -1,3 +1,8 @@
+**AWS Track Winner – HackCBS 8.0 (Delhi)**  
+
+This project was recognized as the **Winner of the AWS Track** at **HackCBS 8.0**, for its innovative use of AWS services and real-world impact in primary healthcare.
+
+
 # Swasya AI
 ## Turning dialogue into data and data into clarity.
 <img width="3000" height="1000" alt="Git Repo Cover" src="https://github.com/user-attachments/assets/0456c97b-cb47-467a-980a-b754aba31942" />
